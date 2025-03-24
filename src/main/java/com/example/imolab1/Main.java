@@ -10,51 +10,14 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import static com.example.CalcDistMatrix.calcDistMatrix;
+import static com.example.DataLoader.dataLoader;
+import static com.example.VisualizeResults.visualizeResults;
+
 public class Main {
-    public static ArrayList<ArrayList<Long>> dataLoader(String filename){
-        ArrayList<ArrayList<Long>> array = new ArrayList<>();
-        File file = new File(filename);
-        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream is = classloader.getResourceAsStream(filename);
-        if( is== null){
-            return array;
-        }
-        Scanner reader = new Scanner(is);
-        while (reader.hasNextLine()) {
-            String data = reader.nextLine();
-            if(!Character.isDigit(data.charAt(0))){
-                continue;
-            }
-            String[] parts = data.split(" ");
-            ArrayList<Long> row = new ArrayList<>();
-            row.add(Long.parseLong(parts[1]));
-            row.add(Long.parseLong(parts[2]));
-            array.add(row);
-        }
-        reader.close();
-        return array;
-    }
 
-    public static ArrayList<ArrayList<Long>> calcDistMatrix(ArrayList<ArrayList<Long>> arrayIn){
-        ArrayList<ArrayList<Long>> arrayOut = new ArrayList<>();
 
-        ArrayList<Long> array1;
-        ArrayList<Long> array2;
 
-        for(int i = 0;i<arrayIn.size();i++){
-            array1 = arrayIn.get(i);
-            ArrayList<Long> rowRes = new ArrayList<>();
-            for(int j = 0; j<arrayIn.size();j++){
-                array2 = arrayIn.get(j);
-                Double a = Math.pow(Double.valueOf(array1.get(0)) - Double.valueOf(array2.get(0)),2.0);
-                Double b = Math.pow(Double.valueOf(array1.get(1)) - Double.valueOf(array2.get(1)),2.0);
-                Long distance = Math.round(Math.sqrt(a + b));
-                rowRes.add(distance);
-            }
-            arrayOut.add(rowRes);
-        }
-        return arrayOut;
-    }
 
     public static ArrayList<ArrayList<Integer>> nearestNeighbourAlg(ArrayList<ArrayList<Long>> distMat) {
         class NnAlg extends TSPAlgorithm {
@@ -90,42 +53,8 @@ public class Main {
     }
 
     public static ArrayList<ArrayList<Integer>> greedyCycleAlg(ArrayList<ArrayList<Long>> distMat) {
-        class GcAlg extends TSPAlgorithm {
-            GcAlg(ArrayList<ArrayList<Long>> distMat) {
-                super(distMat);
-            }
-
-            @Override
-            public void algorithm(int numOfNodes) {
-                numOfNodes+=1;
-                while (distMatNodes.size() < numOfNodes && !distMat.isEmpty()) {
-                    ArrayList<Long> bestNode = null;
-                    int bestInsertionIndex = -1;
-                    long minInsertionCost = Long.MAX_VALUE;
-
-                    for (ArrayList<Long> node : distMat) {
-                        for (int i = 0; i < distMatNodes.size(); i++) {
-                            long cost = calculateInsCost(distMatNodes.get(i), distMatNodes.get((i + 1) % distMatNodes.size()), node);
-                            if (cost < minInsertionCost) {
-                                minInsertionCost = cost;
-                                bestNode = node;
-                                bestInsertionIndex = i+1;
-                            }
-                        }
-                    }
-
-                    if (bestNode != null) {
-                        distMatNodes.add(bestInsertionIndex, bestNode);
-                        distMat.remove(bestNode);
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-        }
         ArrayList<ArrayList<Long>> fdistMat = new ArrayList<>(distMat);
-        GcAlg algorithm = new GcAlg(fdistMat);
+        GreedyCycleAlg algorithm = new GreedyCycleAlg(fdistMat);
         algorithm.process(2);
         return algorithm.getEdges();
     }
@@ -254,51 +183,6 @@ public class Main {
         return algorithm.getEdges();
     }
 
-    public static void visualizeResults(ArrayList<ArrayList<Long>> nodes, ArrayList<ArrayList<Integer>> edges){
-        String stylesheet = """
-                node.cycle1 {
-                    fill-color: red;
-                }
-                node.cycle2 {
-                    fill-color: blue;
-                }
-                edge.cycle1 {
-                    fill-color: red;
-                }
-                edge.cycle2 {
-                    fill-color: blue;
-                }
-                """;
-        System.setProperty("org.graphstream.ui","swing");
-        Graph graph = new SingleGraph("TSP");
-        graph.setAttribute("ui.stylesheet",stylesheet);
-
-        for (int i = 0; i < nodes.size(); i++) {
-            Node node = graph.addNode(String.valueOf(i));
-            node.setAttribute("xy", nodes.get(i).get(0).doubleValue(), nodes.get(i).get(1).doubleValue());
-            //node.setAttribute("ui.label", String.valueOf(i));
-
-        }
-
-
-
-        for (int i = 0; i < edges.size(); i++){
-            Edge edge = graph.addEdge("Edge_" + i,edges.get(i).get(0),edges.get(i).get(1));
-            if(i< edges.size()/2 + 1){
-                edge.setAttribute("ui.class","cycle1");
-                graph.getNode(edges.get(i).get(0)).setAttribute("ui.class","cycle1");
-                graph.getNode(edges.get(i).get(1)).setAttribute("ui.class","cycle1");
-            }else{
-                edge.setAttribute("ui.class","cycle2");
-                graph.getNode(edges.get(i).get(0)).setAttribute("ui.class","cycle2");
-                graph.getNode(edges.get(i).get(1)).setAttribute("ui.class","cycle2");
-            }
-        }
-
-        Viewer viewer = graph.display();
-        viewer.disableAutoLayout();
-
-    }
 
     public static Long countCost(ArrayList<ArrayList<Long>> distMat, ArrayList<ArrayList<Integer>> edges){
         Long sum = 0L;

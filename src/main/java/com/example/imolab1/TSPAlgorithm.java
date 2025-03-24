@@ -36,8 +36,8 @@ public abstract class TSPAlgorithm {
             arrayOut.add(row);
         }
         ArrayList<Integer> tmp = new ArrayList<>();
-        tmp.add(zeroIndices.get(0));
         tmp.add(zeroIndices.get(zeroIndices.size()-1));
+        tmp.add(zeroIndices.get(0));
         arrayOut.add(tmp);
     }
 
