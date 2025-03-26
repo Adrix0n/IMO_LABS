@@ -6,7 +6,7 @@ import java.util.Random;
 public abstract class TSPAlgorithm {
     public ArrayList<ArrayList<Long>> distMat;
     int distMatStartSize;
-    TSPAlgorithm(ArrayList<ArrayList<Long>> distMat){
+    public TSPAlgorithm(ArrayList<ArrayList<Long>> distMat){
         this.distMat = distMat;
         distMatStartSize = distMat.size();
     }
