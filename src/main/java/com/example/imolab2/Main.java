@@ -965,6 +965,21 @@ public class Main {
             System.out.println("Ukonczono: " +done*100+"%");
         }
 
+
+//        Long minCostRandom = Long.MAX_VALUE;
+//        startTime = System.nanoTime();
+//        endTime = System.nanoTime();
+//        while(endTime-startTime<2*10e9){
+//            cDistMat = new ArrayList<>(distMat);
+//            RandAlg ra = new RandAlg(cDistMat);
+//            ra.process(2);
+//            edgesRA = ra.getEdges();
+//            resCost = countCost(distMat,edgesRA);
+//            if(resCost<minCostRandom) minCostRandom = resCost;
+//            endTime = System.nanoTime();
+//        }
+//        System.out.println("min random: " + minCostRandom);
+
         System.out.println("RATT: " + "min: " + bestCostRATT + " avg: " + avgCostRATT/iterations + " max: " + maxCostRATT);
         System.out.println("RATF: " + "min: " + bestCostRATF + " avg: " + avgCostRATF/iterations + " max: " + maxCostRATF);
         System.out.println("RAFT: " + "min: " + bestCostRAFT + " avg: " + avgCostRAFT/iterations + " max: " + maxCostRAFT);
@@ -1002,7 +1017,7 @@ public class Main {
         visualizeResults(nodes,bestEdgesRAFT);
         visualizeResults(nodes,bestEdgesRAFF);
 
-        visualizeResults(nodes,bestEdgesGCATT);
+        visualizeResults(nodes, bestEdgesGCATT);
         visualizeResults(nodes,bestEdgesGCATF);
         visualizeResults(nodes,bestEdgesGCAFT);
         visualizeResults(nodes,bestEdgesGCAFF);
