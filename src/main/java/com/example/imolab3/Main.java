@@ -1,6 +1,5 @@
 package com.example.imolab3;
 
-import com.example.VisualizeResults;
 import com.example.imolab2.RandAlg;
 
 import java.util.ArrayList;
@@ -11,10 +10,41 @@ import static com.example.DataLoader.dataLoader;
 import static com.example.VisualizeResults.visualizeResults;
 import static com.example.imolab2.Main.*;
 
-
 public class Main {
 
-    public static Boolean findSwapSteepest(ArrayList<ArrayList<Long>> distMat,ArrayList<ArrayList<Integer>> edges, ArrayList<MoveWithScore> LM){
+    public static Boolean validateCycles2(ArrayList<ArrayList<Integer>> edges, ArrayList<Integer> edge1, ArrayList<Integer> edge2){
+        ArrayList<ArrayList<Integer>> edges2= new ArrayList<>();
+        for(ArrayList<Integer> edge: edges){
+            edges2.add((ArrayList<Integer>) edge.clone());
+        }
+        swapEdges(edges2,edge1,edge2);
+        int cyclesCounter = 1;
+        int niezgonoscCounter = cyclesCounter;
+        ArrayList<ArrayList<Integer>> niezgodne = new ArrayList<>();
+        for(int i=0;i<edges2.size()-1;i++){
+            if(!Objects.equals(edges2.get(i).get(1), edges2.get(i + 1).get(0))){
+                cyclesCounter+=1;
+                if(cyclesCounter>niezgonoscCounter){
+                    niezgonoscCounter+=1;
+                    niezgodne.add(edges2.get(i));
+                    niezgodne.add(edges2.get(i+1));
+                }
+            }
+
+        }
+        if(cyclesCounter>2){
+            System.out.println("niezgodnosc");
+            System.out.println(cyclesCounter);
+            System.out.println(niezgodne);
+            System.out.println(edges2);
+//                System.out.println(edges.get(i));
+//                System.out.println(edges.get(i+1));
+
+        }
+        return cyclesCounter == 2;
+    }
+
+    public static void findSwapSteepest(ArrayList<ArrayList<Long>> distMat, ArrayList<ArrayList<Integer>> edges, ArrayList<MoveWithScore> LM){
         int firstCycleEndIdx = findCycleEnd(edges);
         // swap edges
 
@@ -22,24 +52,17 @@ public class Main {
         ArrayList<Integer> swapEdge1 = null,swapEdge2 = null;
         ArrayList<Integer> edge1, edge2;
         for(int i = 1; i<=firstCycleEndIdx; i++){
-            for(int j = i+1+1; j<=firstCycleEndIdx;j++){
+            for(int j = i+1; j<=firstCycleEndIdx;j++){
                 edge1 = edges.get(i);
                 edge2 = edges.get(j);
                 if(Objects.equals(edge1.get(0), edge2.get(0))){
                     continue;
                 }
+
                 long delta = calcDelta(distMat,edge1,edge2);
 
-                //do poprawy
-
-
                 if(delta < 0){
-                    ArrayList<ArrayList<Integer>> edges2= new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapEdges(edges2,edge1,edge2);
-                    if(validateCycles(edges2)){
+                    if(validateCycles2(edges,edge1,edge2)){
                         ArrayList<ArrayList<Integer>> edgesList = new ArrayList<>();
                         edgesList.add(edge1);
                         edgesList.add(edge2);
@@ -52,7 +75,7 @@ public class Main {
 
         //Przejście po drugim cyklu
         for(int i = firstCycleEndIdx+1+1; i<edges.size(); i++){
-            for(int j = firstCycleEndIdx+2+1; j<edges.size();j++){
+            for(int j = i+1; j<edges.size();j++){
                 edge1 = edges.get(i);
                 edge2 = edges.get(j);
                 if(Objects.equals(edge1.get(0), edge2.get(0))){
@@ -60,14 +83,8 @@ public class Main {
                 }
 
                 long delta = calcDelta(distMat,edge1,edge2);
-
                 if(delta < 0){
-                    ArrayList<ArrayList<Integer>> edges2= new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapEdges(edges2,edge1,edge2);
-                    if(validateCycles(edges2)){
+                    if(validateCycles2(edges,edge1,edge2)){
                         ArrayList<ArrayList<Integer>> edgesList = new ArrayList<>();
                         edgesList.add(edge1);
                         edgesList.add(edge2);
@@ -119,13 +136,15 @@ public class Main {
 //        }
 //        return true;
 //
-        return false;
     }
 
 
     public static void extentLM(ArrayList<MoveWithScore> LM, MoveWithScore newMoves){
         // Czy nowy
         // Rozważyc odwrotną kolejność np. [1,30] i [30,1] to to samo
+
+
+
         MoveWithScore newMovesRev = new MoveWithScore();
         newMovesRev.score = newMoves.score;
         for(ArrayList<Integer> edge: newMoves.edgeList){
@@ -142,16 +161,17 @@ public class Main {
         }
 
         //Dobra kolejność
+        MoveWithScore copyToAdd = newMoves.copy();
         boolean notAdded = true;
         for(int i=0;i<LM.size();i++){
-            if(newMoves.score < LM.get(i).score){
-                LM.add(i,newMoves);
+            if(copyToAdd.score < LM.get(i).score){
+                LM.add(i,copyToAdd);
                 notAdded = false;
                 break;
             }
         }
         if(notAdded){
-            LM.add(newMoves);
+            LM.add(copyToAdd);
         }
     }
 
@@ -221,7 +241,7 @@ public class Main {
         }
         if(equals + equalsRev < size){
             return -1;
-        } else if (equals<size && equalsRev<size) {
+        } else if (equals<size && equalsRev < size) {
             return 0;
         }else if (equals==size){
             return 1;
@@ -231,14 +251,10 @@ public class Main {
     }
 
 
-
-
     public static void main(String[] args) {
         String[] filenames = {"kroA200.tsp","kroB200.tsp"};
         ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[0]);
         ArrayList<ArrayList<Long>> distMat = calcDistMatrix(nodes);
-
-
 
         ArrayList<ArrayList<Long>> cdistMat = new ArrayList<>(distMat);
         RandAlg ra = new RandAlg(cdistMat);
@@ -250,9 +266,15 @@ public class Main {
         MoveWithScore m;
         ArrayList<Integer> idxToRemove;
         findSwapSteepest(distMat,edgesRA,LM);
+        System.out.println(LM.get(0));
+        System.out.println(LM.get(1));
+        System.out.println(LM.get(2));
 
+        visualizeResults(nodes,edgesRA);
+        System.out.println(edgesRA);
         Long initCost = countCost(distMat,edgesRA);
         do{
+            System.out.println(LM.get(0));
             m = null;
             idxToRemove = new ArrayList<>();
 
@@ -266,16 +288,32 @@ public class Main {
                         break;
                     case 1: // Krawędzie w jednym kierunku
                         m = LM.get(i);
-                        idxToRemove.add(i);
+                        for(int k = 0;k<m.edgeList.size();k+=2){
+                            if(!validateCycles2(edgesRA,m.edgeList.get(k),m.edgeList.get(k+1))){
+                                m=null;
+                                break;
+                            }
+                        }
+                        if(m!=null) {
+                            idxToRemove.add(i);
+                        }
                         break;
                     case 2: // Krawędzie w odwrotnym kierunku
                         m = LM.get(i);
-                        idxToRemove.add(i);
                         for(int j=0;j<m.edgeList.size();j++){
                             ArrayList<Integer> newEdge = new ArrayList<>();
                             newEdge.add(m.edgeList.get(j).get(1));
                             newEdge.add(m.edgeList.get(j).get(0));
                             m.edgeList.set(j,newEdge);
+                        }
+                        for(int k = 0;k<m.edgeList.size();k+=2){
+                            if(!validateCycles2(edgesRA,m.edgeList.get(k),m.edgeList.get(k+1))){
+                                m=null;
+                                break;
+                            }
+                        }
+                        if(m!=null) {
+                            idxToRemove.add(i);
                         }
                         break;
                 }
@@ -295,13 +333,13 @@ public class Main {
                     System.out.println("bestDelta: " + m.score);
                     System.out.println("Podmieniono: "+m.edgeList.get(0)  + " " + m.edgeList.get(1));
                     System.out.println("Podmieniono: "+m.edgeList.get(2)  + " " + m.edgeList.get(3));
-                    swapEdges(edgesRA,m.edgeList.get(0),m.edgeList.get(1));
-                    swapEdges(edgesRA,m.edgeList.get(2),m.edgeList.get(3));
+                    swapNodes(edgesRA,m.edgeList.get(1).get(0),m.edgeList.get(3).get(0));
                 }
             }
             for(int j=idxToRemove.size()-1;j>-1;j--){
                 LM.remove(j);
             }
+//            System.out.println("Koszt po: " + countCost(distMat,edgesRA));
         }while(m!=null);
 
 //        System.out.println(LM.get(0));

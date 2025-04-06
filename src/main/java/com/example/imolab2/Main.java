@@ -337,9 +337,6 @@ public class Main {
                 swapNodes(edges,swapNode2,swapNode1);
             }else {
                 System.out.println("Podmieniono: "+swapEdge1 + " " + swapEdge2);
-
-
-
                 swapEdges(edges, swapEdge1, swapEdge2);
             }
         }else{
