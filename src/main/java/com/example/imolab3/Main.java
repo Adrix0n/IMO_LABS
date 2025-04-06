@@ -33,10 +33,10 @@ public class Main {
 
         }
         if(cyclesCounter>2){
-            System.out.println("niezgodnosc");
-            System.out.println(cyclesCounter);
-            System.out.println(niezgodne);
-            System.out.println(edges2);
+            //System.out.println("niezgodnosc");
+            //System.out.println(cyclesCounter);
+            //System.out.println(niezgodne);
+            //System.out.println(edges2);
 //                System.out.println(edges.get(i));
 //                System.out.println(edges.get(i+1));
 
@@ -46,6 +46,7 @@ public class Main {
 
     public static void findSwapSteepest(ArrayList<ArrayList<Long>> distMat, ArrayList<ArrayList<Integer>> edges, ArrayList<MoveWithScore> LM){
         int firstCycleEndIdx = findCycleEnd(edges);
+        //int firstCycleEndIdx = 49;
         // swap edges
 
         // Przejśćie po pierwszym cyklu
@@ -239,6 +240,9 @@ public class Main {
             System.out.println("BLAD:"+equals +" "+equalsRev);
 
         }
+        if(equals + equalsRev > size){
+            return 0;
+        }
         if(equals + equalsRev < size){
             return -1;
         } else if (equals<size && equalsRev < size) {
@@ -250,6 +254,219 @@ public class Main {
         }
     }
 
+    public static void addNewMovesToLM(ArrayList<MoveWithScore> LM, ArrayList<ArrayList<Integer>> edges, ArrayList<ArrayList<Long>> distMat, MoveWithScore mwc){
+        int cycle2idx = findCycleEnd(edges) + 1;
+        boolean isEdgeSwap = mwc.edgeList.size()==2;
+
+        ArrayList<Integer> newEdge1 = new ArrayList<>();
+        ArrayList<Integer> newEdge2 = new ArrayList<>();
+
+        //swap edges
+        if(isEdgeSwap){
+            // Znadjuje te do wymiany w edges, ale możliwe że trzeba szukać tych o odwróconym kierunku
+            int newEdge1idx = -1;
+            int newEdge2idx = -1;
+            newEdge1.add(mwc.edgeList.get(0).get(0));
+            newEdge1.add(mwc.edgeList.get(1).get(0));
+            newEdge2.add(mwc.edgeList.get(0).get(1));
+            newEdge2.add(mwc.edgeList.get(1).get(1));
+
+            ArrayList<Integer> newEdge3 = new ArrayList<>();
+            ArrayList<Integer> newEdge4 = new ArrayList<>();
+            newEdge3.add(newEdge1.get(1));
+            newEdge3.add(newEdge1.get(0));
+            newEdge4.add(newEdge2.get(1));
+            newEdge4.add(newEdge2.get(0));
+            int newEdge3idx = -1;
+            int newEdge4idx = -1;
+
+
+            for(int i =0;i<edges.size();i++){
+                if(edges.get(i).equals(newEdge1)){
+                    newEdge1idx = i;
+                    //System.out.println("newEdge1idx"+ i);
+                }
+                if(edges.get(i).equals(newEdge2)){
+                    newEdge2idx = i;
+                }
+                if(edges.get(i).equals(newEdge3)){
+                    newEdge3idx = i;
+                }
+                if(edges.get(i).equals(newEdge4)){
+                    newEdge4idx = i;
+                }
+            }
+            if(newEdge1idx==-1){
+                newEdge1idx = newEdge3idx;
+                newEdge1 = newEdge3;}
+            if(newEdge2idx==-1){
+                newEdge2idx = newEdge4idx;
+                newEdge2 = newEdge4;
+                //throw new VerifyError("Indeks = -1: "+ newEdge1idx +" " + newEdge2idx + " "+ newEdge3idx +" " + newEdge4idx);
+            }
+            if(newEdge1idx<cycle2idx){
+                for(int i = 1;i<cycle2idx;i++){
+                    long delta = calcDelta(distMat,newEdge1,edges.get(i));
+                    if(delta < 0){
+                        if(validateCycles2(edges,newEdge1,edges.get(i))){
+                            ArrayList<ArrayList<Integer>> edgesList = new ArrayList<>();
+                            edgesList.add(newEdge1);
+                            edgesList.add(edges.get(i));
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+                for(int i = 1;i<cycle2idx;i++){
+                    long delta = calcDelta(distMat,newEdge2,edges.get(i));
+                    if(delta < 0){
+                        if(validateCycles2(edges,newEdge2,edges.get(i))){
+                            ArrayList<ArrayList<Integer>> edgesList = new ArrayList<>();
+                            edgesList.add(newEdge2);
+                            edgesList.add(edges.get(i));
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+            }else{
+                for(int i = cycle2idx+1;i<edges.size();i++){
+                    long delta = calcDelta(distMat,newEdge1,edges.get(i));
+                    if(delta < 0){
+                        if(validateCycles2(edges,newEdge1,edges.get(i))){
+                            ArrayList<ArrayList<Integer>> edgesList = new ArrayList<>();
+                            edgesList.add(newEdge1);
+                            edgesList.add(edges.get(i));
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+                for(int i = cycle2idx+1;i<edges.size();i++){
+                    long delta = calcDelta(distMat,newEdge2,edges.get(i));
+                    if(delta < 0){
+                        if(validateCycles2(edges,newEdge2,edges.get(i))){
+                            ArrayList<ArrayList<Integer>> edgesList = new ArrayList<>();
+                            edgesList.add(newEdge2);
+                            edgesList.add(edges.get(i));
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+            }
+        }else{
+            // swap nodes
+            int node1 = -1, node2 = -1, swapNode1 = -1, swapNode2 = -1;
+            // swap nodes between cycles
+            node1 = mwc.edgeList.get(1).get(0);
+            node2 = mwc.edgeList.get(3).get(0);
+
+            int node1idx = -1;
+            int node2idx = -1;
+            for(int i =0;i<edges.size();i++){
+                if(edges.get(i).get(0)==node1){
+                    node1idx = i;
+                }
+                if(edges.get(i).get(0)==node2){
+                    node2idx = i;
+                }
+            }
+            if(node1idx<cycle2idx){
+                for(int j = cycle2idx + 1; j < edges.size(); j++){
+                    int node12 = edges.get(j).get(0);
+                    long delta = calcDeltaNode(distMat,edges,node1,node12);
+                    if(delta < 0){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node1,node12);
+                        if(validateCycles(edges2)){
+                            ArrayList<ArrayList<Integer>> edgesList = nodeSwapToEdges(edges,node1,node12);
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+                for(int j = 1; j < cycle2idx; j++){
+                    int node22 = edges.get(j).get(0);
+                    long delta = calcDeltaNode(distMat,edges,node2,node22);
+                    if(delta < 0){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node2,node22);
+                        if(validateCycles(edges2)){
+                            ArrayList<ArrayList<Integer>> edgesList = nodeSwapToEdges(edges,node2,node22);
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+            }else{
+                for(int j = 1; j < cycle2idx; j++){
+                    int node12 = edges.get(j).get(0);
+                    long delta = calcDeltaNode(distMat,edges,node1,node12);
+                    if(delta < 0){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node1,node12);
+                        if(validateCycles(edges2)){
+                            ArrayList<ArrayList<Integer>> edgesList = nodeSwapToEdges(edges,node1,node12);
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+                for(int j = cycle2idx+1; j < edges.size(); j++){
+                    int node22 = edges.get(j).get(0);
+                    long delta = calcDeltaNode(distMat,edges,node2,node22);
+                    if(delta < 0){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node2,node22);
+                        if(validateCycles(edges2)){
+                            ArrayList<ArrayList<Integer>> edgesList = nodeSwapToEdges(edges,node2,node22);
+                            MoveWithScore mwc2 = new MoveWithScore(edgesList,delta);
+                            extentLM(LM,mwc2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void shuffleEdges(ArrayList<ArrayList<Integer>> edges){
+        int firstCycleEnd = findCycleEnd(edges);
+
+        // Zakładamy że edges.size() >= 52
+        ArrayList<Integer> elem0 = edges.get(0);
+        ArrayList<Integer> elem51 = edges.get(firstCycleEnd+1);
+
+// Usuń elementy z indeksów 0 i 51 (51 po usunięciu 0 to stary 50)
+        edges.remove(0);           // Usuwa indeks 0
+        edges.remove(firstCycleEnd);          // Po wcześniejszym usunięciu 0, stary 51 ma teraz indeks 50
+
+// Dodaj element z 0 na pozycję 50
+        edges.add(firstCycleEnd, elem0);
+
+// Dodaj element z 51 (czyli stary 50) na koniec
+        edges.add(elem51);
+        //edges.add(firstCycleEnd,edges.get(0));
+        //edges.remove(0);
+
+//        for(int i=0;i<10;i++){
+//            edges.add(edges.size()-1,edges.get(firstCycleEnd+1));
+//            edges.remove(firstCycleEnd+1);
+//        }
+
+    }
 
     public static void main(String[] args) {
         String[] filenames = {"kroA200.tsp","kroB200.tsp"};
@@ -274,7 +491,7 @@ public class Main {
         System.out.println(edgesRA);
         Long initCost = countCost(distMat,edgesRA);
         do{
-            System.out.println(LM.get(0));
+            //System.out.println(LM.get(0));
             m = null;
             idxToRemove = new ArrayList<>();
 
@@ -325,19 +542,23 @@ public class Main {
             if(m!=null){
                 //Wykonanie ruchu
                 if(m.edgeList.size()==2){
-                    System.out.println("bestDelta: " + m.score);
-                    System.out.println("Podmieniono: "+m.edgeList.get(0) + " " + m.edgeList.get(1));
+                    //System.out.println("bestDelta: " + m.score);
+                    //System.out.println("Podmieniono: "+m.edgeList.get(0) + " " + m.edgeList.get(1));
                     swapEdges(edgesRA,m.edgeList.get(0),m.edgeList.get(1));
                 }
                 if(m.edgeList.size()==4){
-                    System.out.println("bestDelta: " + m.score);
-                    System.out.println("Podmieniono: "+m.edgeList.get(0)  + " " + m.edgeList.get(1));
-                    System.out.println("Podmieniono: "+m.edgeList.get(2)  + " " + m.edgeList.get(3));
+                    //System.out.println("bestDelta: " + m.score);
+                    //System.out.println("Podmieniono: "+m.edgeList.get(0)  + " " + m.edgeList.get(1));
+                    //System.out.println("Podmieniono: "+m.edgeList.get(2)  + " " + m.edgeList.get(3));
                     swapNodes(edgesRA,m.edgeList.get(1).get(0),m.edgeList.get(3).get(0));
                 }
             }
             for(int j=idxToRemove.size()-1;j>-1;j--){
                 LM.remove(j);
+            }
+            if(m!=null){
+                addNewMovesToLM(LM,edgesRA,distMat,m);
+                //shuffleEdges(edgesRA);
             }
 //            System.out.println("Koszt po: " + countCost(distMat,edgesRA));
         }while(m!=null);
