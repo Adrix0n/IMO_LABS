@@ -1,8 +1,11 @@
 package com.example.imolab3;
 
+import com.example.imolab1.GreedyCycleAlg;
 import com.example.imolab2.RandAlg;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static com.example.CalcDistMatrix.calcDistMatrix;
@@ -195,10 +198,10 @@ public class Main {
             }
         }
         if(edgeA0==null || edgeA1==null || edgeB0==null || edgeB1==null){
-            System.out.println(edgeA0);
-            System.out.println(edgeA1);
-            System.out.println(edgeB0);
-            System.out.println(edgeB1);
+            //System.out.println(edgeA0);
+            //System.out.println(edgeA1);
+            //System.out.println(edgeB0);
+            //System.out.println(edgeB1);
             throw new RuntimeException("Krawędź jest nullem, a nie powinna");
         }
 
@@ -237,7 +240,7 @@ public class Main {
         }
 
         if(equals + equalsRev > size){
-            System.out.println("BLAD:"+equals +" "+equalsRev);
+            //System.out.println("BLAD:"+equals +" "+equalsRev);
 
         }
         if(equals + equalsRev > size){
@@ -468,35 +471,22 @@ public class Main {
 
     }
 
-    public static void main(String[] args) {
-        String[] filenames = {"kroA200.tsp","kroB200.tsp"};
-        ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[0]);
-        ArrayList<ArrayList<Long>> distMat = calcDistMatrix(nodes);
-
-        ArrayList<ArrayList<Long>> cdistMat = new ArrayList<>(distMat);
-        RandAlg ra = new RandAlg(cdistMat);
-        ra.process(2);
-        ArrayList<ArrayList<Integer>> edgesRA = ra.getEdges();
-
-
+    public static void proceedLMAlgorithm(ArrayList<ArrayList<Integer>> edges, ArrayList<ArrayList<Long>> distMat){
         ArrayList<MoveWithScore> LM = new ArrayList<>();
         MoveWithScore m;
         ArrayList<Integer> idxToRemove;
-        findSwapSteepest(distMat,edgesRA,LM);
-        System.out.println(LM.get(0));
-        System.out.println(LM.get(1));
-        System.out.println(LM.get(2));
+        findSwapSteepest(distMat,edges,LM);
+        //System.out.println(LM.get(0));
+        //System.out.println(LM.get(1));
+        //System.out.println(LM.get(2));
 
-        visualizeResults(nodes,edgesRA);
-        System.out.println(edgesRA);
-        Long initCost = countCost(distMat,edgesRA);
+        //System.out.println(edges);
         do{
-            //System.out.println(LM.get(0));
             m = null;
             idxToRemove = new ArrayList<>();
 
             for(int i=0;i<LM.size();i++){
-                int checkResult = checkForApply(edgesRA,LM.get(i));
+                int checkResult = checkForApply(edges,LM.get(i));
                 switch(checkResult){
                     case -1: // Usuwane krawędzie nie występują w rozwiązaniu
                         idxToRemove.add(i);
@@ -506,7 +496,7 @@ public class Main {
                     case 1: // Krawędzie w jednym kierunku
                         m = LM.get(i);
                         for(int k = 0;k<m.edgeList.size();k+=2){
-                            if(!validateCycles2(edgesRA,m.edgeList.get(k),m.edgeList.get(k+1))){
+                            if(!validateCycles2(edges,m.edgeList.get(k),m.edgeList.get(k+1))){
                                 m=null;
                                 break;
                             }
@@ -524,7 +514,7 @@ public class Main {
                             m.edgeList.set(j,newEdge);
                         }
                         for(int k = 0;k<m.edgeList.size();k+=2){
-                            if(!validateCycles2(edgesRA,m.edgeList.get(k),m.edgeList.get(k+1))){
+                            if(!validateCycles2(edges,m.edgeList.get(k),m.edgeList.get(k+1))){
                                 m=null;
                                 break;
                             }
@@ -544,33 +534,339 @@ public class Main {
                 if(m.edgeList.size()==2){
                     //System.out.println("bestDelta: " + m.score);
                     //System.out.println("Podmieniono: "+m.edgeList.get(0) + " " + m.edgeList.get(1));
-                    swapEdges(edgesRA,m.edgeList.get(0),m.edgeList.get(1));
+                    swapEdges(edges,m.edgeList.get(0),m.edgeList.get(1));
                 }
                 if(m.edgeList.size()==4){
                     //System.out.println("bestDelta: " + m.score);
                     //System.out.println("Podmieniono: "+m.edgeList.get(0)  + " " + m.edgeList.get(1));
                     //System.out.println("Podmieniono: "+m.edgeList.get(2)  + " " + m.edgeList.get(3));
-                    swapNodes(edgesRA,m.edgeList.get(1).get(0),m.edgeList.get(3).get(0));
+                    swapNodes(edges,m.edgeList.get(1).get(0),m.edgeList.get(3).get(0));
                 }
             }
             for(int j=idxToRemove.size()-1;j>-1;j--){
                 LM.remove(j);
             }
             if(m!=null){
-                addNewMovesToLM(LM,edgesRA,distMat,m);
+                addNewMovesToLM(LM,edges,distMat,m);
                 //shuffleEdges(edgesRA);
             }
 //            System.out.println("Koszt po: " + countCost(distMat,edgesRA));
         }while(m!=null);
+    }
 
-//        System.out.println(LM.get(0));
-//        System.out.println(LM.get(2));
-//        System.out.println(LM.get(4));
-//        System.out.println(LM.get(6));
-//        System.out.println(LM.size());
-        System.out.println("Koszt przed: "+ initCost );
-        visualizeResults(nodes,edgesRA);
-        System.out.println("Koszt po: " + countCost(distMat,edgesRA));
+    public int getNodeIndex(ArrayList<Long> node){
+        for(int i = 0; i<node.size();i++){
+            if(node.get(i)==0){
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    public static ArrayList<ArrayList<Integer>> findCandidates(ArrayList<ArrayList<Long>> distMat, int k){
+        ArrayList<ArrayList<Integer>> candidates = new ArrayList<>();
+        for(int i=0;i<distMat.size();i++){
+            ArrayList<Integer> candidate = new ArrayList<>();
+            ArrayList<Long> list = new ArrayList<>(distMat.get(i));
+            Collections.sort(list);
+            for(int j = 0;j<k;j++){
+                for(int ii =0 ;ii< distMat.size();ii++){
+                    if(list.get(j)==distMat.get(i).get(ii) && i!=ii){
+                        candidate.add(ii);
+                    }
+                }
+            }
+            candidates.add(candidate);
+        }
+        return candidates;
+    }
+
+    public static ArrayList<Integer> findOutEdgeFromNode(ArrayList<ArrayList<Integer>> edges, int node){
+        for (ArrayList<Integer> edge : edges) {
+            if (edge.get(0) == node){
+                return edge;
+            }
+        }
+        return new ArrayList<Integer>();
+    }
+
+    public static boolean checkIfEdgesInSameCycles(ArrayList<ArrayList<Integer>> edges, ArrayList<Integer> edge1, ArrayList<Integer> edge2){
+        int firstCycleEndIdx = findCycleEnd(edges);
+
+        int idx1 = -1;
+        int idx2 = -1;
+        for(int i=0;i<edges.size();i++){
+            if(edges.get(i).equals(edge1)){
+                idx1 = i;
+            }
+            if(edges.get(i).equals(edge2)){
+                idx2 = i;
+            }
+        }
+        if(idx1<=firstCycleEndIdx && idx2 <=firstCycleEndIdx){
+            return true;
+        } else if (idx1>firstCycleEndIdx && idx2>firstCycleEndIdx) {
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public static boolean findSteepestCandidates(ArrayList<ArrayList<Long>> distMat, ArrayList<ArrayList<Integer>> edges){
+        int firstCycleEndIdx = findCycleEnd(edges);
+        ArrayList<ArrayList<Integer>> candidates = findCandidates(distMat,11);
+        //swap edges
+        long bestDelta = Long.MAX_VALUE;
+        ArrayList<Integer> swapEdge1 = null,swapEdge2 = null;
+        for(int i=0;i<edges.size();i++){
+            ArrayList<Integer> edge1 = findOutEdgeFromNode(edges,i);
+            ArrayList<Integer> candidate = candidates.get(i);
+            for(int j=0;j<candidate.size();j++){
+                ArrayList<Integer> edge2 = findOutEdgeFromNode(edges,candidate.get(j));
+                // Sprawdzić czy w tym samym cyklu
+                //System.out.println(edge1 +" "+ edge2);
+                if(!checkIfEdgesInSameCycles(edges,edge1,edge2)){
+                    continue;
+                }
+                //Czasem jakimś cudem nie znajduje jendej z krawędzi, wtedy skip
+                if(edge1.isEmpty() || edge2.isEmpty()){
+                    continue;
+                }
+
+                long delta = calcDelta(distMat,edge1,edge2);
+                if(delta<bestDelta){
+                    bestDelta = delta;
+                    swapEdge1 = edge1;
+                    swapEdge2 = edge2;
+                }
+            }
+        }
+
+
+        // swap nodes
+        int swapNode1 = -1, swapNode2 = -1;
+        for(int i=0;i<candidates.size();i++){
+            int node1 = i;
+            ArrayList<Integer> candidate = candidates.get(i);
+            for(int j=0;j<candidate.size();j++){
+                int node2 = candidate.get(j);
+                long delta = calcDeltaNode(distMat,edges,node1,node2);
+                if(delta<bestDelta){
+                    bestDelta = delta;
+                    swapNode1 = node1;
+                    swapNode2 = node2;
+                }
+            }
+        }
+
+        if(bestDelta<0){
+            if(swapNode1>-1 && swapNode2 >-1){
+                swapNodes(edges,swapNode1,swapNode2);
+                return true;
+            } else if (swapEdge1!=null && swapEdge2!=null) {
+                swapEdges(edges,swapEdge1,swapEdge2);
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return false;
+        }
+    }
+
+    public static double standardDeviation(List<Long> values) {
+        int n = values.size();
+        if (n == 0) return 0.0;
+
+        double mean = values.stream().mapToLong(Long::longValue).average().orElse(0.0);
+
+        double variance = values.stream()
+                .mapToDouble(v -> Math.pow(v - mean, 2))
+                .sum() / n;
+
+        return Math.sqrt(variance);
+    }
+
+
+    public static void main(String[] args) {
+        // Testy
+        String[] filenames = {"kroA200.tsp","kroB200.tsp"};
+        ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[1]);
+        ArrayList<ArrayList<Long>> distMat = calcDistMatrix(nodes);
+        ArrayList<ArrayList<Long>> cDistMat;
+        ArrayList<ArrayList<Integer>> edgesGCA, edgesRA, copyEdges;
+
+        ArrayList<ArrayList<Integer>> bestEdgesLM = null,bestEdgesCAN = null,bestEdgesST = null,bestEdgesGC = null;
+
+        Long minCostLM = Long.MAX_VALUE,minCostCAN = Long.MAX_VALUE,minCostST = Long.MAX_VALUE,minCostGC = Long.MAX_VALUE;
+        Long maxCostLM = 0L,maxCostCAN = 0L,maxCostST = 0L,maxCostGC = 0L;
+        Long avgCostLM = 0L,avgCostCAN = 0L,avgCostST = 0L,avgCostGC = 0L;
+
+        Long minTimeLM = Long.MAX_VALUE,minTimeCAN = Long.MAX_VALUE,minTimeST = Long.MAX_VALUE,minTimeGC = Long.MAX_VALUE;
+        Long avgTimeLM = 0L,avgTimeCAN = 0L,avgTimeST = 0L,avgTimeGC = 0L;
+        Long maxTimeLM = Long.MIN_VALUE,maxTimeCAN = Long.MIN_VALUE,maxTimeST = Long.MIN_VALUE,maxTimeGC = Long.MIN_VALUE;
+
+        Long initCost = 0L, resCost = 0L, startTime = 0L, endTime = 0L, timeTime = 0L;
+
+        List<Long> costResLM = new ArrayList<>(),costResCAN = new ArrayList<>(),costResST = new ArrayList<>(),costResGC = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> initEdges = null;
+        int iterations = 70;
+        double done = 0.0;
+        for(int i =0;i<iterations;i++){
+            cDistMat = new ArrayList<>(distMat);
+            RandAlg ra = new RandAlg(cDistMat);
+            ra.process(2);
+            edgesRA = ra.getEdges();
+
+
+            boolean validrun = false;
+            copyEdges = copyEdges(edgesRA);
+            while(!validrun){
+                try{
+                    copyEdges = copyEdges(edgesRA);
+                    startTime = System.nanoTime();
+                    proceedLMAlgorithm(copyEdges,distMat);
+                    endTime = System.nanoTime();
+                    timeTime = endTime - startTime;
+                    if(findCycleEnd(copyEdges)>101||findCycleEnd(copyEdges)<99){
+                        throw new Exception("Cos nie działa");
+                    }
+                    validrun=true;
+                }catch (Exception e){
+                    cDistMat = new ArrayList<>(distMat);
+                    ra = new RandAlg(cDistMat);
+                    ra.process(2);
+                    edgesRA = ra.getEdges();
+                    System.out.println(e);
+                };
+            }
+            avgTimeLM += timeTime;
+            if(timeTime > maxTimeLM) maxTimeLM = timeTime;
+            if(timeTime < minTimeLM) minTimeLM = timeTime;
+            resCost = countCost(distMat,copyEdges);
+            avgCostLM += resCost;
+            if(resCost>maxCostLM) maxCostLM = resCost;
+            if(bestEdgesLM == null || resCost< minCostLM){
+                bestEdgesLM = copyEdges(copyEdges);
+                minCostLM = resCost;
+            }
+            costResLM.add(resCost);
+            done+=1.0/(4.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%");
+
+            validrun = false;
+            while(!validrun){
+                try{
+                    copyEdges = copyEdges(edgesRA);
+                    startTime = System.nanoTime();
+                    int cc = 0;
+                    while(findSteepestCandidates(distMat,copyEdges)){
+                        cc++;
+                        if(cc>2000){
+                            throw new Exception("nieskończona pętla");
+                        }
+                    };
+                    endTime = System.nanoTime();
+                    timeTime = endTime - startTime;
+                    validrun = true;
+                }catch (Exception e){
+                    cDistMat = new ArrayList<>(distMat);
+                    ra = new RandAlg(cDistMat);
+                    ra.process(2);
+                    edgesRA = ra.getEdges();
+                    System.out.println(e);
+                }
+            }
+            avgTimeCAN += timeTime;
+            if(timeTime > maxTimeCAN) maxTimeCAN = timeTime;
+            if(timeTime < minTimeCAN) minTimeCAN = timeTime;
+            resCost = countCost(distMat,copyEdges);
+            avgCostCAN += resCost;
+            if(resCost>maxCostCAN) maxCostCAN = resCost;
+            if(bestEdgesCAN == null || resCost< minCostCAN){
+                bestEdgesCAN = copyEdges(copyEdges);
+                minCostCAN = resCost;
+            }
+            costResCAN.add(resCost);
+            done+=1.0/(4.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%");
+
+
+
+            copyEdges = copyEdges(edgesRA);
+            startTime = System.nanoTime();
+            while(findSwapGreedyAndSteepest(distMat,copyEdges,true,true)){};
+            endTime = System.nanoTime();
+            timeTime = endTime - startTime;
+            avgTimeST += timeTime;
+            if(timeTime > maxTimeST) maxTimeST = timeTime;
+            if(timeTime < minTimeST) minTimeST = timeTime;
+            resCost = countCost(distMat,copyEdges);
+            avgCostST += resCost;
+            if(resCost>maxCostST) maxCostST = resCost;
+            if(bestEdgesST == null || resCost< minCostST){
+                bestEdgesST = copyEdges(copyEdges);
+                minCostST = resCost;
+            }
+            costResST.add(resCost);
+            done+=1.0/(4.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%");
+
+
+            cDistMat = new ArrayList<>(distMat);
+            GreedyCycleAlg gca = new GreedyCycleAlg(cDistMat);
+
+            startTime = System.nanoTime();
+            gca.process(2);
+            endTime = System.nanoTime();
+            timeTime = endTime - startTime;
+            avgTimeGC += timeTime;
+            if(timeTime > maxTimeGC) maxTimeGC = timeTime;
+            if(timeTime < minTimeGC) minTimeGC = timeTime;
+
+            edgesGCA = gca.getEdges();
+            copyEdges = copyEdges(edgesGCA);
+
+            resCost = countCost(distMat,copyEdges);
+            avgCostGC += resCost;
+            if(resCost>maxCostGC) maxCostGC= resCost;
+            if(bestEdgesGC == null || resCost< minCostGC){
+                bestEdgesGC = copyEdges(copyEdges);
+                minCostGC = resCost;
+            }
+            costResGC.add(resCost);
+            done+=1.0/(4.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%");
+        }
+
+        System.out.println("LM: " + avgCostLM/iterations + " (" +  minCostLM + " - " + maxCostLM + ")");
+        System.out.println("CAN: " + avgCostCAN/iterations + " (" +  minCostCAN + " - " + maxCostCAN + ")");
+        System.out.println("ST: "  + avgCostST/iterations + " (" +  minCostST + " - " + maxCostST + ")");
+        System.out.println("GC: " + + avgCostGC/iterations + " (" +  minCostGC + " - " + maxCostGC + ")");
+
+        double giga = 1000000000.0;
+        System.out.println("Time LM: " + (double)avgTimeLM/iterations/giga  + " (" + (double)minTimeLM/giga + " - " + (double)maxTimeLM/giga +")");
+        System.out.println("Time CAN: " + (double)avgTimeCAN/iterations/giga  + " (" + (double)minTimeCAN/giga + " - " + (double)maxTimeCAN/giga +")");
+        System.out.println("Time ST: " + (double)avgTimeST/iterations/giga  + " (" + (double)minTimeST/giga + " - " + (double)maxTimeST/giga +")");
+        System.out.println("Time GC: " + + (double)avgTimeGC/iterations/giga  + " (" + (double)minTimeGC/giga + " - " + (double)maxTimeGC/giga +")");
+
+
+        System.out.println("SD LM:" + standardDeviation(costResLM));
+        System.out.println("SD CAN:" + standardDeviation(costResCAN));
+        System.out.println("SD ST:" + standardDeviation(costResST));
+        System.out.println("SD GC:" + standardDeviation(costResGC));
+
+        System.out.println("Best LM edges:" + bestEdgesLM);
+        System.out.println("Best CAN edges:" + bestEdgesCAN);
+        System.out.println("Best ST edges:" + bestEdgesST);
+        System.out.println("Best GC edges:" + bestEdgesGC);
+
+
+
+        visualizeResults(nodes,bestEdgesLM);
+        visualizeResults(nodes,bestEdgesCAN);
+        visualizeResults(nodes,bestEdgesST);
+        visualizeResults(nodes,bestEdgesGC);
 
     }
 }
