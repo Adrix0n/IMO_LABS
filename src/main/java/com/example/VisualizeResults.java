@@ -42,7 +42,7 @@ public class VisualizeResults {
 
         for (int i = 0; i < edges.size(); i++){
             Edge edge = graph.addEdge("Edge_" + i,edges.get(i).get(0),edges.get(i).get(1));
-            if(i< edges.size()/2 + 1){
+            if(i< edges.size()/2){
                 edge.setAttribute("ui.class","cycle1");
                 graph.getNode(edges.get(i).get(0)).setAttribute("ui.class","cycle1");
                 graph.getNode(edges.get(i).get(1)).setAttribute("ui.class","cycle1");

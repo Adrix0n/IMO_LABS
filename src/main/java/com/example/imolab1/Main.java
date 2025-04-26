@@ -29,7 +29,7 @@ public class Main {
             public void algorithm(int numOfNodes) {
                 ArrayList<Long> currEl = this.distMatNodes.get(0);
                 int currElIdx = this.getNodeIndex(currEl);
-                for(int i = 0; i<numOfNodes;i++){
+                while (distMatNodes.size() < numOfNodes && !distMat.isEmpty()) {
                     ArrayList<Long> newEl = distMat.get(0);
                     Long minDist = newEl.get(currElIdx);
 
@@ -66,7 +66,7 @@ public class Main {
 
             @Override
             public void algorithm(int numOfNodes) {
-                numOfNodes+=1;
+                //numOfNodes+=1;
                 while (distMatNodes.size() < numOfNodes && !distMat.isEmpty()) {
                     ArrayList<ArrayList<Long>> regretList = new ArrayList<>();
                     for (ArrayList<Long> node : new ArrayList<>(distMat)) {
@@ -128,7 +128,7 @@ public class Main {
 
             @Override
             public void algorithm(int numOfNodes) {
-                numOfNodes+=1;
+                //numOfNodes+=1;
                 while (distMatNodes.size() < numOfNodes && !distMat.isEmpty()) {
                     ArrayList<ArrayList<Long>> regretList = new ArrayList<>();
                     for (ArrayList<Long> node : new ArrayList<>(distMat)) {
@@ -285,7 +285,7 @@ public class Main {
             maxCost = Long.MIN_VALUE;
             avgCost = 0.0;
             for(int i = 0; i<iterations; i++){
-                ArrayList<ArrayList<Integer>> edges = regretCycleAlgWithWeights(distMat,10,-9);
+                ArrayList<ArrayList<Integer>> edges = regretCycleAlgWithWeights(distMat,10,-6);
                 long cost = countCost(distMat,edges);
                 if(cost < minCost) {
                     minCost = cost;

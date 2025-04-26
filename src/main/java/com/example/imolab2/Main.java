@@ -27,12 +27,13 @@ public class Main {
 
     public static Long calcDeltaNode(ArrayList<ArrayList<Long>> distMat,ArrayList<ArrayList<Integer>> edges, Integer node1, Integer node2){
         Long delta = 0L;
+        int firstCycleEndIdx = edges.size()/2 -1;
         ArrayList<Integer> edge1 = null, edge2 = null, edge3 = null, edge4 = null;
         //System.out.println("node1 i 2: " + node1 + "  " + node2);
         for(int i = 0;i<edges.size();i++){
             if(Objects.equals(edges.get(i).get(0), node1)){
                 edge1 = edges.get(i);
-                if(i==0){
+                if(i==0 || i==firstCycleEndIdx+1){
                     for(int j=0;j<edges.size();j++){
                         if(Objects.equals(edges.get(j).get(1), node1)){
                             edge2 = edges.get(j);
@@ -44,7 +45,7 @@ public class Main {
             }
             if(Objects.equals(edges.get(i).get(0), node2)){
                 edge3 = edges.get(i);
-                if(i==0){
+                if(i==0|| i==firstCycleEndIdx+1){
                     for(int j=0;j<edges.size();j++){
                         if(Objects.equals(edges.get(j).get(1), node2)){
                             edge4 = edges.get(j);
@@ -66,20 +67,25 @@ public class Main {
             throw new RuntimeException("Krawędź null a nie powinna");
         }
 
+
+
         if(Objects.equals(edge1.get(0), edge4.get(0))||Objects.equals(edge2.get(0), edge3.get(0))){
             if(Objects.equals(edge1.get(0), edge4.get(0))){
                 delta -= distMat.get(edge2.get(0)).get(edge2.get(1));
                 delta -= distMat.get(edge3.get(0)).get(edge3.get(1));
 
                 delta += distMat.get(edge2.get(0)).get(edge3.get(0));
-                delta += distMat.get(edge1.get(0)).get(edge3.get(1));
+                delta += distMat.get(edge3.get(1)).get(edge2.get(1));
+                //System.out.println(edge2+" "+edge1+" "+edge4+" "+edge3);
             }else{
                 delta -= distMat.get(edge4.get(0)).get(edge4.get(1));
                 delta -= distMat.get(edge1.get(0)).get(edge1.get(1));
 
-                delta += distMat.get(edge4.get(0)).get(edge2.get(1));
-                delta += distMat.get(edge3.get(0)).get(edge1.get(1));
+                delta += distMat.get(edge4.get(0)).get(edge1.get(0));
+                delta += distMat.get(edge1.get(1)).get(edge4.get(1));
+                //System.out.println(edge4+" "+edge3+" "+edge2+" "+edge1);
             }
+            delta = Long.MAX_VALUE;
             //System.out.println("FIREEEE");
         }else{
             delta -= distMat.get(edge1.get(0)).get(edge1.get(1));
@@ -87,10 +93,10 @@ public class Main {
             delta -= distMat.get(edge3.get(0)).get(edge3.get(1));
             delta -= distMat.get(edge4.get(0)).get(edge4.get(1));
 
-            delta += distMat.get(edge2.get(0)).get(edge3.get(0));
-            delta += distMat.get(edge3.get(0)).get(edge1.get(1));
-            delta += distMat.get(edge4.get(0)).get(edge1.get(0));
+            delta += distMat.get(edge2.get(0)).get(edge4.get(1));
+            delta += distMat.get(edge2.get(1)).get(edge4.get(0));
             delta += distMat.get(edge1.get(0)).get(edge3.get(1));
+            delta += distMat.get(edge1.get(1)).get(edge3.get(0));
         }
 
         return delta;
@@ -120,6 +126,9 @@ public class Main {
             idx2 = t;
         }
 
+        if(idx1==-1||idx2==-1){
+            System.out.println("Krawędź null a nie powinna.");
+        }
         ArrayList<Integer> tedge = edges.get(idx1);
         Integer tval = tedge.get(1);
         tedge.set(1,edges.get(idx2).get(0));
@@ -189,18 +198,18 @@ public class Main {
 
     }
 
-    public static Integer findCycleEnd(ArrayList<ArrayList<Integer>> edges){
-        for(int i=0; i<edges.size();i++){
-            if(edges.get(i).get(1)!=edges.get(i+1).get(0)){
-                return i;
-            }
-        }
-        return -1;
-    }
+//    public static Integer findCycleEnd(ArrayList<ArrayList<Integer>> edges){
+//        for(int i=0; i<edges.size();i++){
+//            if(edges.get(i).get(1)!=edges.get(i+1).get(0)){
+//                return i;
+//            }
+//        }
+//        return -1;
+//    }
 
     // Problem w greedy rozwiązany na szybko, trzeba w każdej pętli dodać do i i j po jedynce, aby nie zaczynały od zerowego node cyklu
     public static Boolean findSwapSteepest(ArrayList<ArrayList<Long>> distMat,ArrayList<ArrayList<Integer>> edges){
-        int firstCycleEndIdx = findCycleEnd(edges);
+        int firstCycleEndIdx = edges.size()/2-1;
         long bestDelta = 0L;
         // swap edges
 
@@ -349,7 +358,7 @@ public class Main {
         Random random = new Random();
         int rand = random.nextInt(100);
 
-        int firstCycleEndIdx = findCycleEnd(edges);
+        int firstCycleEndIdx = edges.size()/2-1;
         long bestDelta = 0L;
         ArrayList<Integer> swapEdge1 = null,swapEdge2 = null;
         ArrayList<Integer> edge1, edge2;
@@ -509,17 +518,14 @@ public class Main {
     }
 
     public static Boolean findSwapGreedyAndSteepest(ArrayList<ArrayList<Long>> distMat,ArrayList<ArrayList<Integer>> edges, Boolean isSteepest, Boolean isEdgeSwap){
-        Random random = new Random();
-        int rand = random.nextInt(100);
-
-        int firstCycleEndIdx = findCycleEnd(edges);
+        int firstCycleEndIdx = edges.size()/2-1;
         long bestDelta = 0L;
         ArrayList<Integer> swapEdge1 = null,swapEdge2 = null;
         ArrayList<Integer> edge1, edge2;
         int node1 = -1, node2 = -1, swapNode1 = -1, swapNode2 = -1;
         if(isEdgeSwap){
             for(int i = 0; i<=firstCycleEndIdx; i++){
-                for(int j = i+1; j<=firstCycleEndIdx;j++){
+                for(int j = 0; j<=firstCycleEndIdx;j++){
                     edge1 = edges.get(i);
                     edge2 = edges.get(j);
                     if(Objects.equals(edge1.get(0), edge2.get(0))){
@@ -549,7 +555,7 @@ public class Main {
 
             //Przejście po drugim cyklu
             for(int i = firstCycleEndIdx+1; i<edges.size(); i++){
-                for(int j = firstCycleEndIdx+2; j<edges.size();j++){
+                for(int j = firstCycleEndIdx+1; j<edges.size();j++){
                     edge1 = edges.get(i);
                     edge2 = edges.get(j);
                     if(Objects.equals(edge1.get(0), edge2.get(0))){
@@ -579,8 +585,8 @@ public class Main {
                 }
             }
         }else{
-            for(int i = 1; i<=firstCycleEndIdx; i++){
-                for(int j = i+1; j<=firstCycleEndIdx; j++){
+            for(int i = 0; i<=firstCycleEndIdx; i++){
+                for(int j = 0; j<=firstCycleEndIdx; j++){
                     node1 = edges.get(i).get(0);
                     node2 = edges.get(j).get(0);
 
@@ -610,7 +616,7 @@ public class Main {
 
             // swap nodes between cycles
             for(int i = 1; i <= firstCycleEndIdx; i++){
-                for(int j = firstCycleEndIdx+2; j < distMat.size(); j++){
+                for(int j = firstCycleEndIdx+1+1; j < distMat.size(); j++){
 //                for(int i = 1; i < distMat.size(); i++){
 //                    for(int j = i+2; j < distMat.size(); j++){
                     //System.out.println(i + " zewnątrz");
@@ -639,14 +645,16 @@ public class Main {
             }
 
             //Przejście po drugim cyklu
-            for(int i = firstCycleEndIdx+2; i<edges.size(); i++){
-                for(int j = firstCycleEndIdx+3; j<edges.size();j++){
+            for(int i = firstCycleEndIdx+1; i<edges.size(); i++){
+                for(int j = firstCycleEndIdx+1; j<edges.size();j++){
                     node1 = edges.get(i).get(0);
                     node2 = edges.get(j).get(0);
                     //System.out.println(i + " drugi cykl, wewnatrz");
 
                     Long delta = calcDeltaNode(distMat,edges,node1,node2);
+
                     if(delta < bestDelta && node1 != node2 ){
+                        //System.out.println(delta);
                         ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
                         for(ArrayList<Integer> edge: edges){
                             edges2.add((ArrayList<Integer>) edge.clone());
@@ -691,6 +699,7 @@ public class Main {
     }
 
     public static Boolean validateCycles(ArrayList<ArrayList<Integer>> edges){
+        //TODO: czy to w ogóle potrzebne jest?
         int cyclesCounter = 1;
         int niezgonoscCounter = cyclesCounter;
         ArrayList<ArrayList<Integer>> niezgodne = new ArrayList<>();
@@ -703,7 +712,6 @@ public class Main {
                     niezgodne.add(edges.get(i+1));
                 }
             }
-
         }
         if(cyclesCounter>2){
             System.out.println("niezgodnosc");
@@ -714,7 +722,10 @@ public class Main {
 //                System.out.println(edges.get(i+1));
 
         }
-        return cyclesCounter == 2;
+        return cyclesCounter == 2
+                && !Objects.equals(edges.get(edges.size() / 2 - 1).get(1), edges.get(edges.size() / 2).get(0))
+                && edges.get(0).get(0) == edges.get(edges.size()/2-1).get(1)
+                && edges.get(edges.size()/2).get(0) == edges.get(edges.size()-1).get(1);
     }
 
     public static ArrayList<ArrayList<Integer>> copyEdges(ArrayList<ArrayList<Integer>> edges){
@@ -732,6 +743,7 @@ public class Main {
 //        zadania. W sumie 8 kombinacji - wersji lokalnego przeszukiwania.
         // Testy
         String[] filenames = {"kroA200.tsp","kroB200.tsp"};
+        //String[] filenames = {"test.tsp","test.tsp"};
         ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[0]);
         ArrayList<ArrayList<Long>> distMat = calcDistMatrix(nodes);
         ArrayList<ArrayList<Long>> cDistMat;

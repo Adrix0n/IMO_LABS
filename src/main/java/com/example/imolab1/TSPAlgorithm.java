@@ -25,6 +25,7 @@ public abstract class TSPAlgorithm {
             for(int j = 0; j<arr.size();j++){
                 if(arr.get(j)==0){
                     zeroIndices.add(j);
+                    break;
                 }
             }
         }
@@ -51,16 +52,18 @@ public abstract class TSPAlgorithm {
     public abstract void algorithm(int numOfNodes);
 
     public void process(int numOfCycles){
-        for(int i = 0; i < numOfCycles - 1; i++){
+        for(int i = 0; i < numOfCycles; i++){
             genFirstNode();
             algorithm(distMatStartSize/numOfCycles);
             calcEdges();
             flushCycle();
         }
-        genFirstNode();
-        algorithm(distMat.size());
-        calcEdges();
-        flushCycle();
+        //System.out.println(arrayOut);
+//        genFirstNode();
+//        algorithm(distMat.size());
+//        calcEdges();
+//        flushCycle();
+//        System.out.println(arrayOut);
     }
 
     public int getNodeIndex(ArrayList<Long> node){
@@ -69,7 +72,7 @@ public abstract class TSPAlgorithm {
                 return i;
             }
         }
-        return 0;
+        return -1;
     }
 
     public long calculateInsCost(ArrayList<Long> a, ArrayList<Long> b, ArrayList<Long> c) {

@@ -11,7 +11,6 @@ public class RandAlg extends TSPAlgorithm {
     }
     @Override
     public void algorithm(int numOfNodes) {
-        numOfNodes+=1;
         while (distMatNodes.size() < numOfNodes && !distMat.isEmpty()) {
             Random random = new Random();
             int rand = random.nextInt(distMat.size());

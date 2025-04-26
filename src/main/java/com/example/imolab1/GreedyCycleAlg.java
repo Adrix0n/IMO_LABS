@@ -8,7 +8,7 @@ public class GreedyCycleAlg extends TSPAlgorithm {
     }
     @Override
     public void algorithm(int numOfNodes) {
-        numOfNodes+=1;
+        //numOfNodes+=1; //TODO: Do usunięcia
         while (distMatNodes.size() < numOfNodes && !distMat.isEmpty()) {
             ArrayList<Long> bestNode = null;
             int bestInsertionIndex = -1;
