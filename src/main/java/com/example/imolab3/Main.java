@@ -377,6 +377,7 @@ public class Main {
         }
     }
 
+//TODO: zmienić całkowicie. dodaje tylko krawędzie dla krawędzi i tylko wierzchołki dla wierchołkow. powiniem dla każdej zmiany przetworzyć wierzchoł…i dla których zmiana zaszła pod względem wymiany wierzchołków i krawędzi
     public static void addNewMovesToLM(ArrayList<MoveWithScore> LM, ArrayList<ArrayList<Integer>> edges, ArrayList<ArrayList<Long>> distMat, MoveWithScore mwc){
         int cycle2idx = edges.size()/2;
         boolean isEdgeSwap = mwc.edgeList.size()==2;
