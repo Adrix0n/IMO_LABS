@@ -288,7 +288,7 @@ public class Main {
         return greedyCycleRepair(chainList, distMat, numOfNodes,2);
     }
 
-    public static ArrayList<ArrayList<Integer>> LNS(ArrayList<ArrayList<Long>> distMat, int p, Long time){
+    public static ArrayList<ArrayList<Integer>> LNS(ArrayList<ArrayList<Long>> distMat, int p, Long time, boolean withLS){
         Long startTime = System.nanoTime(), endTime = System.nanoTime();
         ArrayList<ArrayList<Integer>> bestEdges = new ArrayList<>();
         ArrayList<ArrayList<Long>> cDistMat = new ArrayList<>(distMat);
@@ -297,15 +297,24 @@ public class Main {
         ArrayList<ArrayList<Integer>> edgesRA = ra.getEdges();
         bestEdges = copyEdges(edgesRA);
         //System.out.println(bestEdges);
-        while(findSwapGreedyAndSteepest(distMat,edgesRA,true,true));
+        if(withLS){
+            while(findSwapGreedyAndSteepest(distMat,edgesRA,true,true));
+        }
+        Integer iterations =0;
         while(endTime-startTime<time){
             edgesRA = copyEdges(bestEdges);
             perturbation_destroy(edgesRA,p);
             edgesRA = repairAlg(edgesRA,distMat, distMat.size());
-            while(findSwapGreedyAndSteepest(distMat,edgesRA,true,true));
+            if(withLS){
+                while(findSwapGreedyAndSteepest(distMat,edgesRA,true,true));
+            }
             if(countCost(distMat,edgesRA) < countCost(distMat,bestEdges)){ bestEdges = copyEdges(edgesRA);}
             endTime = System.nanoTime();
+            iterations+=1;
         }
+        ArrayList<Integer> addedge = new ArrayList<>();
+        addedge.add(iterations);
+        bestEdges.add(addedge);
         return bestEdges;
     }
 
@@ -400,7 +409,7 @@ public class Main {
 
 
             startTime = System.nanoTime();
-            copyEdges = LNS(distMat,destroyPerc,timeMSLS);
+            copyEdges = LNS(distMat,destroyPerc,timeMSLS,true);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
             avgTimeLNS += timeTime;

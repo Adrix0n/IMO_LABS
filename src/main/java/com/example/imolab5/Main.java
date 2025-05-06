@@ -1,5 +1,6 @@
 package com.example.imolab5;
 
+import com.example.imolab1.GreedyCycleAlg;
 import com.example.imolab2.RandAlg;
 import com.example.imolab3.CandidatesLS;
 
@@ -45,7 +46,14 @@ public class Main {
 
     public static EdgesWithCost recombine(EdgesWithCost ewc1, EdgesWithCost ewc2, ArrayList<ArrayList<Long>> distMat){
         ArrayList<ArrayList<Integer>> destroyedEdges = deleteOneFromAnother(ewc1.edges,ewc2.edges);
-        ArrayList<ArrayList<Integer>> newEdges = repairAlg(destroyedEdges,distMat,ewc1.edges.size()/2);
+        //System.out.println(destroyedEdges);
+        if(destroyedEdges.isEmpty()){
+            ArrayList<Integer> p = new ArrayList<>();
+            p.add(0);
+            p.add(1);
+            destroyedEdges.add(p);
+        }
+        ArrayList<ArrayList<Integer>> newEdges = repairAlg(destroyedEdges,distMat,ewc1.edges.size());
         EdgesWithCost resEwc = new EdgesWithCost();
         resEwc.edges = newEdges;
         resEwc.cost = countCost(distMat,newEdges);
@@ -55,19 +63,23 @@ public class Main {
     public static ArrayList<ArrayList<Integer>> deleteOneFromAnother(ArrayList<ArrayList<Integer>> edges_out,ArrayList<ArrayList<Integer>> edges_ref ){
         ArrayList<ArrayList<Integer>> resEdges = copyEdges(edges_out);
         ArrayList<Integer> idxToRemove = new ArrayList<>();
-        for(int i = 0; i < edges_out.size();i++){
+        resEdges.remove(resEdges.size()/2-1);
+        resEdges.remove(resEdges.size()-1);
+        for(int i = 0; i < resEdges.size();i++){
+            boolean toRemove = true;
             for(int j = 0;j<edges_ref.size();j++){
-                boolean toRemove = true;
                 if(edges_out.get(i).equals(edges_ref.get(j))){
                     toRemove = false;
-                }
-                if(toRemove){
-                    idxToRemove.add(i);
+                    break;
                 }
             }
+            if(toRemove){
+                idxToRemove.add(i);
+            }
         }
+        //System.out.println(idxToRemove);
         for(int i=idxToRemove.size()-1;i>-1;i--){
-            resEdges.remove(i);
+            resEdges.remove((int)idxToRemove.get(i));
         }
         return resEdges;
     }
@@ -92,14 +104,26 @@ public class Main {
         }
     }
 
-    public static ArrayList<ArrayList<Integer>> HAE(ArrayList<ArrayList<Long>> distMat,  int pop_size){
+    public static ArrayList<ArrayList<Integer>> HAE(ArrayList<ArrayList<Long>> distMat,  int pop_size, Long maxTime, boolean withLS){
+        Long startTime = System.nanoTime();
+        Long endTime = System.nanoTime();
+
         ArrayList<EdgesWithCost> population = genStartPopulation(distMat,pop_size);
         Random rand = new Random();
-        int idx1 = rand.nextInt(pop_size);
-        int idx2 = rand.nextInt(pop_size);
-        while(idx1==idx2){idx2 = rand.nextInt(pop_size);}
-        EdgesWithCost newEwc = recombine(population.get(idx1),population.get(idx2),distMat);
-        addOrDiscard(population,newEwc);
+        Integer iterations = 0;
+        while(endTime-startTime<maxTime){
+            int idx1 = rand.nextInt(pop_size);
+            int idx2 = rand.nextInt(pop_size);
+            while(idx1==idx2){idx2 = rand.nextInt(pop_size);}
+            EdgesWithCost newEwc = recombine(population.get(idx1),population.get(idx2),distMat);
+            if(withLS){
+                while(findSwapGreedyAndSteepest(distMat,newEwc.edges,false,true));
+                newEwc.cost = countCost(distMat,newEwc.edges);
+            }
+            addOrDiscard(population,newEwc);
+            endTime = System.nanoTime();
+            iterations += 1;
+        }
 
         int bestIdx = 0;
         long bestCost = Long.MAX_VALUE;
@@ -109,7 +133,34 @@ public class Main {
                 bestIdx = i;
             }
         }
-        return population.get(bestIdx).edges;
+
+        ArrayList<ArrayList<Integer>> resEdges = population.get(bestIdx).edges;
+        ArrayList<Integer> addedge = new ArrayList<>();
+        addedge.add(iterations);
+        resEdges.add(addedge);
+        return resEdges;
+    }
+
+    public static ArrayList<ArrayList<Integer>> MSGC(ArrayList<ArrayList<Long>> distMat, long maxTime){
+        long startTime = System.nanoTime();
+        long endTime = System.nanoTime();
+        ArrayList<ArrayList<Integer>> bestEdges = new ArrayList<>();
+        Integer iterations = 0;
+        while(endTime-startTime<maxTime){
+            ArrayList<ArrayList<Long>> cDistMat = new ArrayList<>(distMat);
+            GreedyCycleAlg gca = new GreedyCycleAlg(cDistMat);
+            gca.process(2);
+            ArrayList<ArrayList<Integer>> edgesGCA = gca.getEdges();
+            if(bestEdges.isEmpty()){bestEdges = edgesGCA;}
+            else if(countCost(distMat,edgesGCA) < countCost(distMat,bestEdges)){ bestEdges = edgesGCA;}
+            endTime = System.nanoTime();
+            iterations+=1;
+        }
+
+        ArrayList<Integer> addedge = new ArrayList<>();
+        addedge.add(iterations);
+        bestEdges.add(addedge);
+        return bestEdges;
     }
 
 
@@ -127,6 +178,11 @@ public class Main {
     }
 
     public static void main(String[] args) {
+
+
+        //Testy:
+        //LNS lp, LNS w/o lp, HAE w/o lp, HAE lp, GC MS
+        // Zliczać liczbę iteracji
         // Testy
         String[] filenames = {"kroA200.tsp","kroB200.tsp"};
         //String[] filenames = {"test.tsp","test.tsp"};
@@ -135,125 +191,215 @@ public class Main {
         ArrayList<ArrayList<Long>> cDistMat;
         ArrayList<ArrayList<Integer>> edgesRA, copyEdges;
 
-        ArrayList<ArrayList<Integer>> bestEdgesLM = null,bestEdgesCAN = null,bestEdgesST = null;
+        ArrayList<ArrayList<Integer>> bestEdgesLNSlp = null,bestEdgesLNS = null, bestEdgesHAElp = null,bestEdgesHAE = null,bestEdgesMSGC= null;
 
-        Long minCostMSLS = Long.MAX_VALUE,minCostILS = Long.MAX_VALUE,minCostLNS = Long.MAX_VALUE;
-        Long maxCostMSLS = 0L,maxCostILS = 0L,maxCostLNS = 0L;
-        Long avgCostMSLS = 0L,avgCostILS = 0L,avgCostLNS = 0L;
+        Long minCostLNSlp = Long.MAX_VALUE, minCostLNS = Long.MAX_VALUE, minCostHAElp = Long.MAX_VALUE, minCostHAE = Long.MAX_VALUE,minCostMSGC = Long.MAX_VALUE;
+        Long maxCostLNSlp = 0L,maxCostLNS = 0L,maxCostHAElp = 0L,maxCostHAE = 0L,maxCostMSGC = 0L;
+        Long avgCostLNSlp = 0L,avgCostLNS = 0L,avgCostHAElp = 0L,avgCostHAE = 0L,avgCostMSGC = 0L;
 
-        Long minTimeMSLS = Long.MAX_VALUE,minTimeILS = Long.MAX_VALUE,minTimeLNS = Long.MAX_VALUE;
-        Long maxTimeMSLS = Long.MIN_VALUE,maxTimeILS = Long.MIN_VALUE,maxTimeLNS = Long.MIN_VALUE;
-        Long avgTimeMSLS = 0L,avgTimeILS = 0L,avgTimeLNS = 0L;
+        Long minTimeLNSlp = Long.MAX_VALUE,minTimeLNS = Long.MAX_VALUE,minTimeHAElp = Long.MAX_VALUE,minTimeHAE = Long.MAX_VALUE,minTimeMSGC = Long.MAX_VALUE;
+        Long maxTimeLNSlp = Long.MIN_VALUE,maxTimeLNS = Long.MIN_VALUE,maxTimeHAElp = Long.MIN_VALUE,maxTimeHAE = Long.MIN_VALUE,maxTimeMSGC = Long.MIN_VALUE;
+        Long avgTimeLNSlp = 0L,avgTimeLNS = 0L,avgTimeHAElp = 0L,avgTimeHAE = 0L,avgTimeMSGC = 0L;
+
+        Long minIterLNSlp = Long.MAX_VALUE,minIterLNS = Long.MAX_VALUE,minIterHAElp = Long.MAX_VALUE,minIterHAE = Long.MAX_VALUE,minIterMSGC = Long.MAX_VALUE;
+        Long maxIterLNSlp = 0L,maxIterLNS = 0L,maxIterHAElp = 0L,maxIterHAE = 0L,maxIterMSGC = 0L;
+        Long avgIterLNSlp = 0L,avgIterLNS = 0L,avgIterHAElp = 0L,avgIterHAE = 0L,avgIterMSGC = 0L;
 
         Long initCost = 0L, resCost = 0L, startTime = 0L, endTime = 0L, timeTime = 0L, timeMSLS = 0L;
+        Integer iter = 0;
 
-        List<Long> costResMSLS = new ArrayList<>(),costResILS = new ArrayList<>(),costResLNS = new ArrayList<>();
+        List<Long> costResLNSlp = new ArrayList<>(),costResLNS = new ArrayList<>(),costResHAElp = new ArrayList<>(),costResHAE = new ArrayList<>(),costResMSGC = new ArrayList<>();
         double giga = 1000000000.0;
 
-
-        int iterations = 1;
+        int iterations = 5;
         int knn = 12;
         int MSLStimes = 20;
         int ILSpertK = 12;
         int destroyPerc = 30;
+        int pop_size = 20;
+        //KROA
+        timeMSLS = 343 * (long)giga;
+        //KROB
+        //timeMSLS = 298 * (long)giga;
+        //Test
+        //timeMSLS = 10 * (long)giga;
+
 
         double done = 0.0;
-
-        ArrayList<EdgesWithCost> asd = genStartPopulation(distMat,20);
-        for(EdgesWithCost asdasd: asd){
-            System.out.println(asdasd.cost);
-        }
-
-
-
-
         for(int i =0;i<iterations;i++){
+            // 1
             startTime = System.nanoTime();
-            copyEdges = MSLS(distMat,knn+1, MSLStimes);
+            copyEdges = LNS(distMat,destroyPerc,timeMSLS,true);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
             timeMSLS = timeTime;
 
-            avgTimeMSLS += timeTime;
-            if(timeTime > maxTimeMSLS) maxTimeMSLS = timeTime;
-            if(timeTime < minTimeMSLS) minTimeMSLS = timeTime;
+            iter = copyEdges.get(copyEdges.size()-1).get(0);
+            copyEdges.remove(copyEdges.size()-1);
+            if(iter<minIterLNSlp){minIterLNSlp = (long)iter;}
+            if(iter>maxIterLNSlp){maxIterLNSlp = (long)iter;}
+            avgIterLNSlp += iter;
+
+            avgTimeLNSlp += timeTime;
+            if(timeTime > maxTimeLNSlp) maxTimeLNSlp = timeTime;
+            if(timeTime < minTimeLNSlp) minTimeLNSlp = timeTime;
             resCost = countCost(distMat,copyEdges);
-            avgCostMSLS += resCost;
-            if(resCost>maxCostMSLS) maxCostMSLS = resCost;
-            if(bestEdgesLM == null || resCost< minCostMSLS){
-                bestEdgesLM = copyEdges(copyEdges);
-                minCostMSLS = resCost;
+            avgCostLNSlp += resCost;
+            if(resCost>maxCostLNSlp) maxCostLNSlp = resCost;
+            if(bestEdgesLNSlp == null || resCost< minCostLNSlp){
+                bestEdgesLNSlp = copyEdges(copyEdges);
+                minCostLNSlp = resCost;
             }
-            costResMSLS.add(resCost);
-            done+=1.0/(3.0*iterations);
+            costResLNSlp.add(resCost);
+            done+=1.0/(5.0*iterations);
             System.out.println("Ukonczono: " +done*100+"%, Czas: " + (double)timeTime/giga + "s.");
 
 
-
+            // 2
             startTime = System.nanoTime();
-            copyEdges = ILS(distMat,ILSpertK,timeMSLS);
+            copyEdges = LNS(distMat,destroyPerc,timeMSLS,false);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
+            timeMSLS = timeTime;
 
-            avgTimeILS += timeTime;
-            if(timeTime > maxTimeILS) maxTimeILS = timeTime;
-            if(timeTime < minTimeILS) minTimeILS = timeTime;
-            resCost = countCost(distMat,copyEdges);
-            avgCostILS += resCost;
-            if(resCost>maxCostILS) maxCostILS = resCost;
-            if(bestEdgesCAN == null || resCost< minCostILS){
-                bestEdgesCAN = copyEdges(copyEdges);
-                minCostILS = resCost;
-            }
-            costResILS.add(resCost);
-            done+=1.0/(3.0*iterations);
-            System.out.println("Ukonczono: " +done*100+"%, Czas: " + (double)timeTime/giga + "s.");
+            iter = copyEdges.get(copyEdges.size()-1).get(0);
+            copyEdges.remove(copyEdges.size()-1);
+            if(iter<minIterLNS){minIterLNS = (long)iter;}
+            if(iter>maxIterLNS){maxIterLNS = (long)iter;}
+            avgIterLNS += iter;
 
-
-
-
-            startTime = System.nanoTime();
-            copyEdges = LNS(distMat,destroyPerc,timeMSLS);
-            endTime = System.nanoTime();
-            timeTime = endTime - startTime;
             avgTimeLNS += timeTime;
             if(timeTime > maxTimeLNS) maxTimeLNS = timeTime;
             if(timeTime < minTimeLNS) minTimeLNS = timeTime;
             resCost = countCost(distMat,copyEdges);
             avgCostLNS += resCost;
             if(resCost>maxCostLNS) maxCostLNS = resCost;
-            if(bestEdgesST == null || resCost< minCostLNS){
-                bestEdgesST = copyEdges(copyEdges);
+            if(bestEdgesLNS == null || resCost< minCostLNS){
+                bestEdgesLNS = copyEdges(copyEdges);
                 minCostLNS = resCost;
             }
             costResLNS.add(resCost);
-            done+=1.0/(3.0*iterations);
+            done+=1.0/(5.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%, Czas: " + (double)timeTime/giga + "s.");
+
+
+
+            // 3
+            startTime = System.nanoTime();
+            copyEdges = HAE(distMat,pop_size,timeMSLS,true);
+            endTime = System.nanoTime();
+            timeTime = endTime - startTime;
+            timeMSLS = timeTime;
+
+            iter = copyEdges.get(copyEdges.size()-1).get(0);
+            copyEdges.remove(copyEdges.size()-1);
+            if(iter<minIterHAElp){minIterHAElp = (long)iter;}
+            if(iter>maxIterHAElp){maxIterHAElp = (long)iter;}
+            avgIterHAElp += iter;
+
+            avgTimeHAElp += timeTime;
+            if(timeTime > maxTimeHAElp) maxTimeHAElp = timeTime;
+            if(timeTime < minTimeHAElp) minTimeHAElp = timeTime;
+            resCost = countCost(distMat,copyEdges);
+            avgCostHAElp += resCost;
+            if(resCost>maxCostHAElp) maxCostHAElp = resCost;
+            if(bestEdgesHAElp == null || resCost< minCostHAElp){
+                bestEdgesHAElp = copyEdges(copyEdges);
+                minCostHAElp = resCost;
+            }
+            costResHAElp.add(resCost);
+            done+=1.0/(5.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%, Czas: " + (double)timeTime/giga + "s.");
+
+
+
+            // 4
+            startTime = System.nanoTime();
+            copyEdges = HAE(distMat,pop_size,timeMSLS,false);
+            endTime = System.nanoTime();
+            timeTime = endTime - startTime;
+            timeMSLS = timeTime;
+
+            iter = copyEdges.get(copyEdges.size()-1).get(0);
+            copyEdges.remove(copyEdges.size()-1);
+            if(iter<minIterHAE){minIterHAE = (long)iter;}
+            if(iter>maxIterHAE){maxIterHAE = (long)iter;}
+            avgIterHAE += iter;
+
+            avgTimeHAE += timeTime;
+            if(timeTime > maxTimeHAE) maxTimeHAE = timeTime;
+            if(timeTime < minTimeHAE) minTimeHAE = timeTime;
+            resCost = countCost(distMat,copyEdges);
+            avgCostHAE += resCost;
+            if(resCost>maxCostHAE) maxCostHAE = resCost;
+            if(bestEdgesHAE == null || resCost< minCostHAE){
+                bestEdgesHAE = copyEdges(copyEdges);
+                minCostHAE = resCost;
+            }
+            costResHAE.add(resCost);
+            done+=1.0/(5.0*iterations);
+            System.out.println("Ukonczono: " +done*100+"%, Czas: " + (double)timeTime/giga + "s.");
+
+
+            // 5
+            startTime = System.nanoTime();
+            copyEdges = MSGC(distMat,timeMSLS);
+            endTime = System.nanoTime();
+            timeTime = endTime - startTime;
+            timeMSLS = timeTime;
+
+            iter = copyEdges.get(copyEdges.size()-1).get(0);
+            copyEdges.remove(copyEdges.size()-1);
+            if(iter<minIterMSGC){minIterMSGC = (long)iter;}
+            if(iter>maxIterMSGC){maxIterMSGC = (long)iter;}
+            avgIterMSGC += iter;
+
+            avgTimeMSGC += timeTime;
+            if(timeTime > maxTimeMSGC) maxTimeMSGC = timeTime;
+            if(timeTime < minTimeMSGC) minTimeMSGC = timeTime;
+            resCost = countCost(distMat,copyEdges);
+            avgCostMSGC += resCost;
+            if(resCost>maxCostMSGC) maxCostMSGC = resCost;
+            if(bestEdgesMSGC == null || resCost< minCostMSGC){
+                bestEdgesMSGC = copyEdges(copyEdges);
+                minCostMSGC = resCost;
+            }
+            costResMSGC.add(resCost);
+            done+=1.0/(5.0*iterations);
             System.out.println("Ukonczono: " +done*100+"%, Czas: " + (double)timeTime/giga + "s.");
         }
 
-        System.out.println("MSLS: " + avgCostMSLS/iterations + " (" +  minCostMSLS + " - " + maxCostMSLS + ")");
-        System.out.println("ILS: " + avgCostILS/iterations + " (" +  minCostILS + " - " + maxCostILS + ")");
-        System.out.println("LNS: "  + avgCostLNS/iterations + " (" +  minCostLNS + " - " + maxCostLNS + ")");
+        System.out.println("LNSlp: " + avgCostLNSlp/iterations + " (" +  minCostLNSlp + " - " + maxCostLNSlp + ")");
+        System.out.println("LNS: " + avgCostLNS/iterations + " (" +  minCostLNS + " - " + maxCostLNS + ")");
+        System.out.println("HAElp: "  + avgCostHAElp/iterations + " (" +  minCostHAElp + " - " + maxCostHAElp + ")");
+        System.out.println("HAE: " + avgCostHAE/iterations + " (" +  minCostHAE + " - " + maxCostHAE + ")");
+        System.out.println("MSGC: "  + avgCostMSGC/iterations + " (" +  minCostMSGC + " - " + maxCostMSGC + ")");
 
 
-        System.out.println("Time MSLS: " + (double)avgTimeMSLS/iterations/giga  + " (" + (double)minTimeMSLS/giga + " - " + (double)maxTimeMSLS/giga +")");
-        System.out.println("Time ILS: " + (double)avgTimeILS/iterations/giga  + " (" + (double)minTimeILS/giga + " - " + (double)maxTimeILS/giga +")");
+        System.out.println("Time LNSlp: " + (double)avgTimeLNSlp/iterations/giga  + " (" + (double)minTimeLNSlp/giga + " - " + (double)maxTimeLNSlp/giga +")");
         System.out.println("Time LNS: " + (double)avgTimeLNS/iterations/giga  + " (" + (double)minTimeLNS/giga + " - " + (double)maxTimeLNS/giga +")");
+        System.out.println("Time HAElp: " + (double)avgTimeHAElp/iterations/giga  + " (" + (double)minTimeHAElp/giga + " - " + (double)maxTimeHAElp/giga +")");
+        System.out.println("Time HAE: " + (double)avgTimeHAE/iterations/giga  + " (" + (double)minTimeHAE/giga + " - " + (double)maxTimeHAE/giga +")");
+        System.out.println("Time MSGC: " + (double)avgTimeMSGC/iterations/giga  + " (" + (double)minTimeMSGC/giga + " - " + (double)maxTimeMSGC/giga +")");
+
+        System.out.println("Iterations LNSlp: " + (double)avgIterLNSlp/iterations  + " (" + (double)minIterLNSlp + " - " + (double)maxIterLNSlp +")");
+        System.out.println("Iterations LNS: " + (double)avgIterLNS/iterations  + " (" + (double)minIterLNS + " - " + (double)maxIterLNS +")");
+        System.out.println("Iterations HAElp: " + (double)avgIterHAElp/iterations  + " (" + (double)minIterHAElp + " - " + (double)maxIterHAElp +")");
+        System.out.println("Iterations HAE: " + (double)avgIterHAE/iterations  + " (" + (double)minIterHAE + " - " + (double)maxIterHAE +")");
+        System.out.println("Iterations MSGC: " + (double)avgIterMSGC/iterations  + " (" + (double)minIterMSGC + " - " + (double)maxIterMSGC +")");
 
 
-
-        System.out.println("SD MSLS:" + standardDeviation(costResMSLS));
-        System.out.println("SD ILS:" + standardDeviation(costResILS));
-        System.out.println("SD LNS:" + standardDeviation(costResLNS));
-
-
-        System.out.println("Best MSLS edges:" + bestEdgesLM);
-        System.out.println("Best ILS edges:" + bestEdgesCAN);
-        System.out.println("Best LNS edges:" + bestEdgesST);
+        System.out.println("Best LNSlp edges:" + bestEdgesLNSlp);
+        System.out.println("Best LNS edges:" + bestEdgesLNS);
+        System.out.println("Best HAElp edges:" + bestEdgesHAElp);
+        System.out.println("Best HAE edges:" + bestEdgesHAE);
+        System.out.println("Best MSGC edges:" + bestEdgesMSGC);
 
 
-        visualizeResults(nodes,bestEdgesLM);
-        visualizeResults(nodes,bestEdgesCAN);
-        visualizeResults(nodes,bestEdgesST);
+        visualizeResults(nodes,bestEdgesLNSlp);
+        visualizeResults(nodes,bestEdgesLNS);
+        visualizeResults(nodes,bestEdgesHAElp);
+        visualizeResults(nodes,bestEdgesHAE);
+        visualizeResults(nodes,bestEdgesMSGC);
     }
 }
