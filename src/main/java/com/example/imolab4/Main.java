@@ -326,7 +326,7 @@ public class Main {
         // Testy
         String[] filenames = {"kroA200.tsp","kroB200.tsp"};
         //String[] filenames = {"test.tsp","test.tsp"};
-        ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[1]);
+        ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[0]);
         ArrayList<ArrayList<Long>> distMat = calcDistMatrix(nodes);
         ArrayList<ArrayList<Long>> cDistMat;
         ArrayList<ArrayList<Integer>> edgesRA, copyEdges;
@@ -347,9 +347,9 @@ public class Main {
         double giga = 1000000000.0;
 
 
-        int iterations = 10;
+        int iterations = 1;
         int knn = 12;
-        int MSLStimes = 200;
+        int MSLStimes = 20;
         int ILSpertK = 12;
         int destroyPerc = 30;
 

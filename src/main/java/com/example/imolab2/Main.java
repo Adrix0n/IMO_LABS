@@ -364,27 +364,19 @@ public class Main {
         ArrayList<Integer> edge1, edge2;
         int node1 = -1, node2 = -1, swapNode1 = -1, swapNode2 = -1;
         if(rand<p){
-            for(int i = 1; i<=firstCycleEndIdx; i++){
-                for(int j = i+1; j<=firstCycleEndIdx;j++){
+            for(int i = 0; i<=firstCycleEndIdx; i++){
+                for(int j = 0; j<=firstCycleEndIdx;j++){
                     edge1 = edges.get(i);
                     edge2 = edges.get(j);
                     if(Objects.equals(edge1.get(0), edge2.get(0))){
                         continue;
                     }
-
-                    //do poprawy
-                    ArrayList<ArrayList<Integer>> edges2= new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapEdges(edges2,edge1,edge2);
-
                     long delta = calcDelta(distMat,edge1,edge2);
-                    if(delta < bestDelta && validateCycles(edges2)){
-                        bestDelta = delta;
-                        swapEdge1 = edge1;
-                        swapEdge2 = edge2;
-                        break;
+                    if(delta < bestDelta){
+                            bestDelta = delta;
+                            swapEdge1 = edge1;
+                            swapEdge2 = edge2;
+                            break;
                     }
                 }
                 if(swapEdge1!=null){
@@ -393,28 +385,19 @@ public class Main {
             }
 
             //Przejście po drugim cyklu
-            for(int i = firstCycleEndIdx+2; i<edges.size(); i++){
-                for(int j = firstCycleEndIdx+3; j<edges.size();j++){
+            for(int i = firstCycleEndIdx+1; i<edges.size(); i++){
+                for(int j = firstCycleEndIdx+1; j<edges.size();j++){
                     edge1 = edges.get(i);
                     edge2 = edges.get(j);
                     if(Objects.equals(edge1.get(0), edge2.get(0))){
                         continue;
                     }
-
                     long delta = calcDelta(distMat,edge1,edge2);
-
-                    //Do poprawy
-                    ArrayList<ArrayList<Integer>> edges2= new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapEdges(edges2,edge1,edge2);
-
-                    if(delta < bestDelta && validateCycles(edges2)){
-                        bestDelta = delta;
-                        swapEdge1 = edge1;
-                        swapEdge2 = edge2;
-                        break;
+                    if(delta < bestDelta){
+                            bestDelta = delta;
+                            swapEdge1 = edge1;
+                            swapEdge2 = edge2;
+                            break;
                     }
                 }
                 if(swapEdge1!=null){
@@ -427,24 +410,21 @@ public class Main {
                 for(int j = i+1; j<=firstCycleEndIdx; j++){
                     node1 = edges.get(i).get(0);
                     node2 = edges.get(j).get(0);
-                    //System.out.println(i + " pierwszy cykl, wewnatrz");
-
-                    ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapNodes(edges2,node1,node2);
 
                     Long delta = calcDeltaNode(distMat,edges,node1,node2);
-                    if(!validateCycles(edges2)){
-                        System.out.println(node1);
-                        System.out.println(node2);
-                    }
-                    if(delta < bestDelta && node1 != node2 && validateCycles(edges2)){
-                        bestDelta = delta;
-                        swapNode1 = node1;
-                        swapNode2 = node2;
-                        break;
+                    if(delta < bestDelta){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node1,node2);
+                        if(validateCycles(edges2)){
+                            bestDelta = delta;
+                            swapNode1 = node1;
+                            swapNode2 = node2;
+                            break;
+                        }
+
                     }
                 }
                 if(swapNode1!=-1){
@@ -458,17 +438,22 @@ public class Main {
                     //System.out.println(i + " zewnątrz");
                     node1 = edges.get(i).get(0);
                     node2 = edges.get(j).get(0);
-                    ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapNodes(edges2,node1,node2);
+
                     Long delta = calcDeltaNode(distMat,edges,edges.get(i).get(0),edges.get(j).get(0));
-                    if(delta < bestDelta && !Objects.equals(edges.get(i).get(0), edges.get(j).get(0)) && validateCycles(edges2)){
-                        bestDelta = delta;
-                        swapNode1 = edges.get(i).get(0);
-                        swapNode2 = edges.get(j).get(0);
-                        break;
+
+                    if(delta < bestDelta){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node1,node2);
+                        if(validateCycles(edges2)){
+                            bestDelta = delta;
+                            swapNode1 = edges.get(i).get(0);
+                            swapNode2 = edges.get(j).get(0);
+                            break;
+                        }
+
                     }
                 }
                 if(swapNode1!=-1){
@@ -483,18 +468,19 @@ public class Main {
                     node2 = edges.get(j).get(0);
                     //System.out.println(i + " drugi cykl, wewnatrz");
 
-                    ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
-                    for(ArrayList<Integer> edge: edges){
-                        edges2.add((ArrayList<Integer>) edge.clone());
-                    }
-                    swapNodes(edges2,node1,node2);
-
                     Long delta = calcDeltaNode(distMat,edges,node1,node2);
-                    if(delta < bestDelta && node1 != node2 && validateCycles(edges2)){
-                        bestDelta = delta;
-                        swapNode1 = node1;
-                        swapNode2 = node2;
-                        break;
+                    if(delta < bestDelta){
+                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+                        for(ArrayList<Integer> edge: edges){
+                            edges2.add((ArrayList<Integer>) edge.clone());
+                        }
+                        swapNodes(edges2,node1,node2);
+                        if(validateCycles(edges2)){
+                            bestDelta = delta;
+                            swapNode1 = node1;
+                            swapNode2 = node2;
+                            break;
+                        }
                     }
                 }
                 if(swapNode1!=-1){
@@ -503,12 +489,12 @@ public class Main {
             }
         }
         if(bestDelta<0){
-            System.out.println("bestDelta: " + bestDelta);
+            //System.out.println("bestDelta: " + bestDelta);
             if(swapNode1!=-1){
-                System.out.println("Podmieniono: "+swapNode1 + " " + swapNode2);
+                //System.out.println("Podmieniono: "+swapNode1 + " " + swapNode2);
                 swapNodes(edges,swapNode2,swapNode1);
             }else {
-                System.out.println("Podmieniono: "+swapEdge1 + " " + swapEdge2);
+                //System.out.println("Podmieniono: "+swapEdge1 + " " + swapEdge2);
                 swapEdges(edges, swapEdge1, swapEdge2);
             }
         }else{

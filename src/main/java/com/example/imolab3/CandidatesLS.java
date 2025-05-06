@@ -25,6 +25,28 @@ public class CandidatesLS {
         return candidates;
     }
 
+    public static ArrayList<ArrayList<Integer>> getEdgesFromNodes2(ArrayList<ArrayList<Integer>> edges, int node1, int node2){
+        ArrayList<ArrayList<Integer>> res = new ArrayList<>();
+        int firstCycleEndIdx = edges.size()/2-1;
+        int idx1 = -1;
+        int idx2 = -1;
+        for(int i=0;i<edges.size();i++){
+            if(edges.get(i).get(1).equals(node1)){
+                idx1 = i;
+                res.add(edges.get(i));
+            }
+            if(edges.get(i).get(1).equals(node2)){
+                idx2 = i;
+                res.add(edges.get(i));
+            }
+        }
+        ArrayList<Integer> t = new ArrayList<>();
+        t.add(idx1);
+        t.add(idx2);
+        res.add(t);
+        return res;
+    }
+
     public static ArrayList<ArrayList<Integer>> getEdgesFromNodes(ArrayList<ArrayList<Integer>> edges, int node1, int node2){
         ArrayList<ArrayList<Integer>> res = new ArrayList<>();
         int firstCycleEndIdx = edges.size()/2-1;
@@ -57,6 +79,7 @@ public class CandidatesLS {
             ArrayList<Integer> candidate = candidates.get(i);
             for(int j=0;j<candidate.size();j++){
                 ArrayList<ArrayList<Integer>> edgesAndIndices =  getEdgesFromNodes(edges,i,candidate.get(j));
+                //ArrayList<ArrayList<Integer>> edgesAndIndices2 =  getEdgesFromNodes(edges,i,candidate.get(j));
                 //Czasem jakimś cudem nie znajduje jendej z krawędzi, wtedy skip
                 if(edgesAndIndices.get(0).isEmpty() || edgesAndIndices.get(1).isEmpty()){
                     continue;
@@ -92,9 +115,63 @@ public class CandidatesLS {
                         swapNode1 = -1;
                         swapNode2 = -1;
                     }
+
+//                    edge1 = edgesAndIndices2.get(0);
+//                    edge2 = edgesAndIndices2.get(1);
+//                    delta = calcDelta(distMat,edge1,edge2);
+//                    if(delta<bestDelta){
+//                        bestDelta = delta;
+//                        swapEdge1 = edge1;
+//                        swapEdge2 = edge2;
+//                        swapNode1 = -1;
+//                        swapNode2 = -1;
+//                    }
                 }
             }
         }
+
+//        for(int i=0;i<edges.size();i++){
+//            ArrayList<Integer> candidate = candidates.get(i);
+//            for(int j=0;j<candidate.size();j++){
+//                ArrayList<ArrayList<Integer>> edgesAndIndices =  getEdgesFromNodes2(edges,i,candidate.get(j));
+//                //Czasem jakimś cudem nie znajduje jendej z krawędzi, wtedy skip
+//                if(edgesAndIndices.get(0).isEmpty() || edgesAndIndices.get(1).isEmpty()){
+//                    continue;
+//                }
+//                ArrayList<Integer> indices = edgesAndIndices.get(2);
+//                int idx1 = indices.get(0), idx2 = indices.get(1);
+//                // Sprawdzić czy w tym samym cyklu
+//                //System.out.println(edge1 +" "+ edge2);
+//                if((idx1<=firstCycleEndIdx&&idx2>firstCycleEndIdx)||(idx1>firstCycleEndIdx&&idx2<=firstCycleEndIdx)){
+//                    // swap nodes
+//                    int node2 = candidate.get(j);
+//                    long delta = calcDeltaNode(distMat,edges,i,node2);
+//                    if(delta<bestDelta){
+//                        ArrayList<ArrayList<Integer>> edges2 = new ArrayList<>();
+//                        for(ArrayList<Integer> edge: edges){
+//                            edges2.add((ArrayList<Integer>) edge.clone());
+//                        }
+//                        swapNodes(edges2,i,node2);
+//                        if(validateCycles(edges2)){
+//                            bestDelta = delta;
+//                            swapNode1 = i;
+//                            swapNode2 = node2;
+//                        }
+//                    }
+//                }else{
+//                    ArrayList<Integer> edge1 = edgesAndIndices.get(0);
+//                    ArrayList<Integer> edge2 = edgesAndIndices.get(1);
+//                    long delta = calcDelta(distMat,edge1,edge2);
+//                    if(delta<bestDelta){
+//                        bestDelta = delta;
+//                        swapEdge1 = edge1;
+//                        swapEdge2 = edge2;
+//                        swapNode1 = -1;
+//                        swapNode2 = -1;
+//                    }
+//                }
+//            }
+//        }
 
 //        for(int i=0;i<candidates.size();i++){
 //            int node1 = i;
