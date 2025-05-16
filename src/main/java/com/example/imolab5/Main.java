@@ -124,7 +124,6 @@ public class Main {
             endTime = System.nanoTime();
             iterations += 1;
         }
-
         int bestIdx = 0;
         long bestCost = Long.MAX_VALUE;
         for(int i =0; i<population.size();i++){
@@ -133,7 +132,6 @@ public class Main {
                 bestIdx = i;
             }
         }
-
         ArrayList<ArrayList<Integer>> resEdges = population.get(bestIdx).edges;
         ArrayList<Integer> addedge = new ArrayList<>();
         addedge.add(iterations);
