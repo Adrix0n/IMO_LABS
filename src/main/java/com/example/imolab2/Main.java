@@ -492,7 +492,7 @@ public class Main {
             //System.out.println("bestDelta: " + bestDelta);
             if(swapNode1!=-1){
                 //System.out.println("Podmieniono: "+swapNode1 + " " + swapNode2);
-                swapNodes(edges,swapNode2,swapNode1);
+                swapNodes(edges,swapNode1,swapNode2);
             }else {
                 //System.out.println("Podmieniono: "+swapEdge1 + " " + swapEdge2);
                 swapEdges(edges, swapEdge1, swapEdge2);

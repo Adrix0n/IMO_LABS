@@ -34,7 +34,7 @@ public class Main {
             ra.process(2);
             ArrayList<ArrayList<Integer>> edgesRA = ra.getEdges();
             //TODO: Może inne lokalne przeszukiwanie
-            while(findSwapGreedy(distMat,edgesRA,50)){}
+            while(findSwapGreedy(distMat,edgesRA,100)){}
             long cost = countCost(distMat,edgesRA);
             EdgesWithCost ewc = new EdgesWithCost();
             ewc.edges = copyEdges(edgesRA);
@@ -184,7 +184,7 @@ public class Main {
         // Testy
         String[] filenames = {"kroA200.tsp","kroB200.tsp"};
         //String[] filenames = {"test.tsp","test.tsp"};
-        ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[0]);
+        ArrayList<ArrayList<Long>> nodes = dataLoader(filenames[1]);
         ArrayList<ArrayList<Long>> distMat = calcDistMatrix(nodes);
         ArrayList<ArrayList<Long>> cDistMat;
         ArrayList<ArrayList<Integer>> edgesRA, copyEdges;
@@ -216,7 +216,8 @@ public class Main {
         int destroyPerc = 30;
         int pop_size = 20;
         //KROA
-        timeMSLS = 343 * (long)giga;
+        //timeMSLS = 343 * (long)giga;
+        timeMSLS = 200 * (long)giga;
         //KROB
         //timeMSLS = 298 * (long)giga;
         //Test
@@ -230,7 +231,7 @@ public class Main {
             copyEdges = LNS(distMat,destroyPerc,timeMSLS,true);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
-            timeMSLS = timeTime;
+            //timeMSLS = timeTime;
 
             iter = copyEdges.get(copyEdges.size()-1).get(0);
             copyEdges.remove(copyEdges.size()-1);
@@ -258,7 +259,7 @@ public class Main {
             copyEdges = LNS(distMat,destroyPerc,timeMSLS,false);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
-            timeMSLS = timeTime;
+            //timeMSLS = timeTime;
 
             iter = copyEdges.get(copyEdges.size()-1).get(0);
             copyEdges.remove(copyEdges.size()-1);
@@ -287,7 +288,7 @@ public class Main {
             copyEdges = HAE(distMat,pop_size,timeMSLS,true);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
-            timeMSLS = timeTime;
+            //timeMSLS = timeTime;
 
             iter = copyEdges.get(copyEdges.size()-1).get(0);
             copyEdges.remove(copyEdges.size()-1);
@@ -316,7 +317,7 @@ public class Main {
             copyEdges = HAE(distMat,pop_size,timeMSLS,false);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
-            timeMSLS = timeTime;
+            //timeMSLS = timeTime;
 
             iter = copyEdges.get(copyEdges.size()-1).get(0);
             copyEdges.remove(copyEdges.size()-1);
@@ -344,7 +345,7 @@ public class Main {
             copyEdges = MSGC(distMat,timeMSLS);
             endTime = System.nanoTime();
             timeTime = endTime - startTime;
-            timeMSLS = timeTime;
+            //timeMSLS = timeTime;
 
             iter = copyEdges.get(copyEdges.size()-1).get(0);
             copyEdges.remove(copyEdges.size()-1);
